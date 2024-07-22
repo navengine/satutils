@@ -11,7 +11,7 @@
 namespace satutils {
 
 
-struct ClockData
+struct GpsClockData
 {
   double T_GD {0.0};
   double t_oc {0.0};
@@ -28,7 +28,7 @@ struct ClockData
 };
 
 
-struct Ephemeris
+struct GpsEphemeris
 {
   double M_0 {0.0};
   double del_n {0.0};
@@ -172,7 +172,7 @@ struct Ephemeris
   }
 };
 
-constexpr ClockData GpsClockDataScaleFactors =
+constexpr GpsClockData GpsClockDataScaleFactors =
 {
   std::pow(2.0,-31),
   16,
@@ -182,7 +182,7 @@ constexpr ClockData GpsClockDataScaleFactors =
   1
 };
 
-constexpr ClockData GpsClockDataLowerLimits = 
+constexpr GpsClockData GpsClockDataLowerLimits = 
 {
   -std::pow(2.0,7-31),
   0,
@@ -192,7 +192,7 @@ constexpr ClockData GpsClockDataLowerLimits =
   0
 };
 
-constexpr ClockData GpsClockDataUpperLimits = 
+constexpr GpsClockData GpsClockDataUpperLimits = 
 {
   127 * std::pow(2.0,-31),
   604784,
@@ -202,7 +202,7 @@ constexpr ClockData GpsClockDataUpperLimits =
   1023
 };
 
-constexpr Ephemeris GpsEphemerisScaleFactors =
+constexpr GpsEphemeris GpsEphemerisScaleFactors =
 {
   std::pow(2.0,-31),
   std::pow(2.0,-43),
@@ -223,7 +223,7 @@ constexpr Ephemeris GpsEphemerisScaleFactors =
   1
 };
 
-constexpr Ephemeris GpsEphemerisLowerLimits = 
+constexpr GpsEphemeris GpsEphemerisLowerLimits = 
 {
   -std::pow(2.0,31-31),
   -std::pow(2.0,15-43),
@@ -244,7 +244,7 @@ constexpr Ephemeris GpsEphemerisLowerLimits =
   0
 };
 
-constexpr Ephemeris GpsEphemerisUpperLimits = 
+constexpr GpsEphemeris GpsEphemerisUpperLimits = 
 {
   (std::pow(2.0,31) - 1.0) * std::pow(2.0,-31),
   (std::pow(2.0,15) - 1.0) * std::pow(2.0,-43),
