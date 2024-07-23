@@ -3,32 +3,96 @@
 
 #include <cstdint>
 #include <cmath>
+#include <numbers>
 
 #include <Eigen/Dense>
 
+#include <navtools/math.hpp>
 #include <satutils/constants.hpp>
 
 namespace satutils {
 
+// struct GpsClockDataBits
+// {
+//   int8_t T_GD {0};
+//   uint16_t t_oc {0};
+//   int32_t a_f0 {0};
+//   int16_t a_f1 {0};
+//   int8_t a_f2 {0};
+//   uint16_t IODC {0};
+// };
 
+template<typename Float>
 struct GpsClockData
 {
-  double T_GD {0.0};
-  double t_oc {0.0};
-  double a_f0 {0.0};
-  double a_f1 {0.0};
-  double a_f2 {0.0};
+  Float T_GD {0.0};
+  Float t_oc {0.0};
+  Float a_f0 {0.0};
+  Float a_f1 {0.0};
+  Float a_f2 {0.0};
   uint16_t IODC {0};
 
-  double Offset(const double gps_time) const;
-  double OffsetRate(const double gps_time) const;
-  double OffsetRateRate() const;
+  Float Offset(const Float gps_time) const
+  {
+    Float dt = gps_time - t_oc;
+    return a_f0 + (a_f1 * dt) + (a_f2 * dt * dt);
+  }
+  
+  Float OffsetRate(const Float gps_time) const
+  {
+    return a_f1 + (2.0 * (gps_time - t_oc) * a_f2);
+  }
+  
+  Float OffsetRateRate() const
+  {
+    return 2.0 * a_f2;
+  }
 
-  void Randomize();
+  struct Storage
+  {
+    Float T_GD {0.0};
+    Float t_oc {0.0};
+    Float a_f0 {0.0};
+    Float a_f1 {0.0};
+    Float a_f2 {0.0};
+    uint16_t IODC {0};
+  };
+
+  static constexpr Storage LowerLimits =
+  {
+    -std::pow(2.0,7-31),
+    0,
+    -std::pow(2.0,21-31),
+    -std::pow(2.0,15-43),
+    -std::pow(2.0,7-55),
+    0 
+  };
+
+  static constexpr Storage UpperLimits = 
+  {
+    127 * std::pow(2.0,-31),
+    604784,
+    (std::pow(2.0,21) - 1.0) * std::pow(2.0,-31),
+    (std::pow(2.0,15) - 1.0) * std::pow(2.0,-43),
+    127 * std::pow(2.0,-55),
+    1023
+  };
+
+  static constexpr Storage ScaleFactors =
+  {
+    std::pow(2.0,-31),
+    16,
+    std::pow(2.0,-31),
+    std::pow(2.0,-43),
+    std::pow(2.0,-55),
+    1
+  };
+
+  // TODO
+  // void Randomize();
 };
 
-
-struct GpsEphemeris
+struct KeplerEphemeris
 {
   double M_0 {0.0};
   double del_n {0.0};
@@ -49,32 +113,41 @@ struct GpsEphemeris
 
   double t_oe {0.0};
   uint8_t IODE {0};
-  
-  inline double EfromAnomaly(const double M_k, const unsigned int iterations) const;
-  inline double EfromTime(const double gps_time, const unsigned int iterations) const;
 
-  void P(const double gps_time, Eigen::Vector3d& pos) const;
-  void PV(const double gps_time, Eigen::Vector3d& pos, Eigen::Vector3d& vel) const;
-  void PVA(const double gps_time, Eigen::Vector3d& pos, Eigen::Vector3d& vel,
-    Eigen::Vector3d& acc) const;
-
-  double RelTime(const double gps_time) const;
-  double RelTimeRate(const double gps_time) const;
-  double RelTimeRateRate(const double gps_time) const;
-
-  void Randomize();
-
-  void Print() const;
-  
   constexpr static double J2 = 0.0010826262;
   constexpr static double RELETIVISTIC_F = -4.442807633e-10;
   constexpr static double WGS84_MU = 3.986005e14;
   constexpr static double WGS84_EARTH_RATE = 7.2921151467e-5;
   constexpr static double WGS84_EQUAT_RADIUS = 6378137.0;
 
-  // void PVA(const double gps_time, Eigen::Vector3d& pos, Eigen::Vector3d& vel,
-  //   Eigen::Vector3d& acc, bool calc_vel, bool calc_accel) const;
-  
+  inline double EfromAnomaly(const double M_k, const unsigned int iterations) const
+  {
+    double E_k = M_k;
+    double del_E;
+    do {
+      del_E = (M_k - E_k + (e * std::sin(E_k))) / (1.0 - (e * std::cos(E_k)));
+      E_k += del_E;
+    }
+    while (del_E > 1.0e-15);
+    return E_k;
+  }
+
+  inline double EfromTime(const double gps_time, const unsigned int iterations) const
+  {
+    double A = std::pow(sqrtA,2.0);
+
+    double n_0 = std::sqrt(WGS84_MU / std::pow(A,3.0));
+    double t_k = gps_time - t_oe;
+    if (t_k > 302400.0) {
+      t_k -= 604800.0;
+    } else if (t_k < -302400) {
+      t_k += 604800.0;
+    }
+
+    double n = n_0 + del_n;
+    return EfromAnomaly(M_0 + (n * t_k),5);
+  }
+
   template<bool CalcVel, bool CalcAccel>
   void CalcPVA(const double gps_time, Eigen::Vector3d& pos, Eigen::Vector3d& vel,
     Eigen::Vector3d& accel) const
@@ -103,7 +176,7 @@ struct GpsEphemeris
     double v_k = std::atan2(sv_k,cv_k);
 
     double Phi_k = v_k + omega;
-    circular_fmod(Phi_k,GPS_2PI<double>);
+    navtools::circular_fmod(Phi_k,GPS_2PI<double>);
 
     double Phi2 = 2.0 * Phi_k;
     double du_k = (C_us * std::sin(Phi2)) + (C_uc * std::cos(Phi2));
@@ -170,39 +243,88 @@ struct GpsEphemeris
                 + ( F * (3.0 - (5.0 * std::pow(pos(2) / r_k, 2.0))) * pos(2) / r_k );  
     }
   }
+
+  void P(const double gps_time, Eigen::Vector3d& pos) const
+  {
+    Eigen::Vector3d filler;
+    CalcPVA<false,false>(gps_time, pos, filler, filler);
+  }
+
+  void PV(const double gps_time, Eigen::Vector3d& pos, Eigen::Vector3d& vel) const
+  {
+    Eigen::Vector3d filler;
+    CalcPVA<true,false>(gps_time, pos, vel, filler);
+  }
+
+  void PVA(const double gps_time, Eigen::Vector3d& pos, Eigen::Vector3d& vel,
+    Eigen::Vector3d& accel) const
+  {
+    CalcPVA<true,true>(gps_time, pos, vel, accel);
+  }
+
+  double RelTime(const double gps_time) const
+  {
+    return RELETIVISTIC_F * std::numbers::e * sqrtA * std::sin(EfromTime(gps_time,5));
+  }
+
+  double RelTimeRate(const double gps_time) const
+  {
+    double A = std::pow(sqrtA,2.0);
+    double n_0 = std::sqrt(WGS84_MU / std::pow(A,3.0));
+    double t_k = gps_time - t_oe;
+    if (t_k > 302400.0) {
+      t_k -= 604800.0;
+    } else if (t_k < -302400) {
+      t_k += 604800.0;
+    }  
+    double n = n_0 + del_n;
+    double e_cos_E = std::numbers::e * std::cos( EfromAnomaly(M_0 + (n * t_k),5) );
+
+    return (n * RELETIVISTIC_F * sqrtA * e_cos_E) / (1.0 - e_cos_E);
+  }
+
+  double RelTimeRateRate(const double gps_time) const
+  {
+    double A = std::pow(sqrtA,2.0);
+    double n_0 = std::sqrt(WGS84_MU / std::pow(A,3.0));
+    double t_k = gps_time - t_oe;
+    if (t_k > 302400.0) {
+      t_k -= 604800.0;
+    } else if (t_k < -302400) {
+      t_k += 604800.0;
+    }  
+    double n = n_0 + del_n;
+    double E_k = EfromAnomaly(M_0 + (n * t_k),5);
+
+    return ( n * n * RELETIVISTIC_F * std::numbers::e * sqrtA * std::sin(E_k) )
+            / std::pow(1.0 - std::numbers::e * std::cos(E_k), 2);
+  }
+
+  void Randomize(); // TODO
+
+  void Print() const
+  {
+    std::cout << "M_0:       " << M_0 << '\n';
+    std::cout << "del_n:     " << del_n << '\n';
+    std::cout << "e:         " << e << '\n';
+    std::cout << "sqrtA:     " << sqrtA << '\n';
+    std::cout << "Omega_0:   " << Omega_0 << '\n';
+    std::cout << "i_0:       " << i_0 << '\n';
+    std::cout << "omega:     " << omega << '\n';
+    std::cout << "Omega_dot: " << Omega_dot << '\n';
+    std::cout << "IDOT:      " << IDOT << '\n';
+    std::cout << "C_uc:      " << C_uc << '\n';
+    std::cout << "C_us:      " << C_us << '\n';
+    std::cout << "C_rc:      " << C_rc << '\n';
+    std::cout << "C_rs:      " << C_rs << '\n';
+    std::cout << "C_ic:      " << C_ic << '\n';
+    std::cout << "C_is:      " << C_is << '\n';
+    std::cout << "t_oe:      " << t_oe << '\n';
+    std::cout << "IODE:      " << static_cast<int>(IODE) << '\n';
+  }
 };
 
-constexpr GpsClockData GpsClockDataScaleFactors =
-{
-  std::pow(2.0,-31),
-  16,
-  std::pow(2.0,-31),
-  std::pow(2.0,-43),
-  std::pow(2.0,-55),
-  1
-};
-
-constexpr GpsClockData GpsClockDataLowerLimits = 
-{
-  -std::pow(2.0,7-31),
-  0,
-  -std::pow(2.0,21-31),
-  -std::pow(2.0,15-43),
-  -std::pow(2.0,7-55),
-  0
-};
-
-constexpr GpsClockData GpsClockDataUpperLimits = 
-{
-  127 * std::pow(2.0,-31),
-  604784,
-  (std::pow(2.0,21) - 1.0) * std::pow(2.0,-31),
-  (std::pow(2.0,15) - 1.0) * std::pow(2.0,-43),
-  127 * std::pow(2.0,-55),
-  1023
-};
-
-constexpr GpsEphemeris GpsEphemerisScaleFactors =
+constexpr KeplerEphemeris GpsEphemerisScaleFactors =
 {
   std::pow(2.0,-31),
   std::pow(2.0,-43),
@@ -223,7 +345,7 @@ constexpr GpsEphemeris GpsEphemerisScaleFactors =
   1
 };
 
-constexpr GpsEphemeris GpsEphemerisLowerLimits = 
+constexpr KeplerEphemeris GpsEphemerisLowerLimits = 
 {
   -std::pow(2.0,31-31),
   -std::pow(2.0,15-43),
@@ -244,7 +366,7 @@ constexpr GpsEphemeris GpsEphemerisLowerLimits =
   0
 };
 
-constexpr GpsEphemeris GpsEphemerisUpperLimits = 
+constexpr KeplerEphemeris GpsEphemerisUpperLimits = 
 {
   (std::pow(2.0,31) - 1.0) * std::pow(2.0,-31),
   (std::pow(2.0,15) - 1.0) * std::pow(2.0,-43),
