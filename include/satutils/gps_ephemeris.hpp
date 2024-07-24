@@ -176,7 +176,7 @@ struct KeplerEphemeris
     double v_k = std::atan2(sv_k,cv_k);
 
     double Phi_k = v_k + omega;
-    navtools::circular_fmod(Phi_k,GPS_2PI<double>);
+    navtools::circ_fmod(Phi_k,GPS_2PI<double>);
 
     double Phi2 = 2.0 * Phi_k;
     double du_k = (C_us * std::sin(Phi2)) + (C_uc * std::cos(Phi2));
