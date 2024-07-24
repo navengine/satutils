@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <cassert>
 
-#include <satutils/binary_ops.hpp>
+#include <navtools/binary_ops.hpp>
 #include <satutils/code_gen.hpp>
 
 namespace satutils {
@@ -55,17 +55,17 @@ void CodeGenCA(std::array<bool,1023>& sequence, const uint8_t prn)
 
   for (std::size_t i = 0; i < 1023; i++) {
     // set value in sequence
-    sequence[i] = BitVal<true>(G1,9) 
-                    ^ BitVal<true>(G2,g2_out_taps[prn-1][0]-1)
-                    ^ BitVal<true>(G2,g2_out_taps[prn-1][1]-1);
+    sequence[i] = navtools::BitVal<true>(G1,9) 
+                    ^ navtools::BitVal<true>(G2,g2_out_taps[prn-1][0]-1)
+                    ^ navtools::BitVal<true>(G2,g2_out_taps[prn-1][1]-1);
 
     // shift the registers and set first bits
-    bool feedback1 = MultiXor<2,true>(G1,taps1);
-    bool feedback2 = MultiXor<6,true>(G2,taps2);
+    bool feedback1 = navtools::MultiXor<2,true>(G1,taps1);
+    bool feedback2 = navtools::MultiXor<6,true>(G2,taps2);
     G1 <<= 1;
     G2 <<= 1;
-    BitEqu<true>(G1,0,feedback1);
-    BitEqu<true>(G2,0,feedback2);
+    navtools::BitEqu<true>(G1,0,feedback1);
+    navtools::BitEqu<true>(G2,0,feedback2);
   }
 }
 
