@@ -42,7 +42,7 @@ case "$OSTYPE" in
     cmake .. \
         -DCMAKE_C_COMPILER=clang-17 \
         -DCMAKE_CXX_COMPILER=clang++-17 \
-        -DINSTALL_NAVSAT_EXAMPLES=True \
+        -DINSTALL_SATUTILS_EXAMPLES=True \
         -DCMAKE_INSTALL_PREFIX=../build \
         -DCMAKE_BUILD_TYPE=Debug
         ;;
@@ -52,7 +52,7 @@ case "$OSTYPE" in
         -G "MinGW Makefiles" \
         -DCMAKE_CXX_COMPILER=C:/MinGW/bin/g++.exe \
         -DCMAKE_C_COMPILER=C:/MinGW/bin/gcc.exe \
-        -DINSTALL_NAVSAT_EXAMPLES=True \
+        -DINSTALL_SATUTILS_EXAMPLES=True \
         -DCMAKE_INSTALL_PREFIX=../build \
         -DCMAKE_BUILD_TYPE=Debug
         ;;

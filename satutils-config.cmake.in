@@ -1,7 +1,7 @@
 @PACKAGE_INIT@
 
-find_package(xtl REQUIRED)
-find_package(xtensor REQUIRED)
+find_package(Eigen3 REQUIRED)
+find_package(navtools REQUIRED)
 
 # set_and_check(@PROJECT_NAME@ "@PACKAGE_@PROJECT_NAME@_INCLUDE_DIRS@")
 
