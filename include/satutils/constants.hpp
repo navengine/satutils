@@ -50,14 +50,13 @@ inline constexpr std::size_t GALILEO_E6_CODE_LENGTH = 5115;   //! Galileo E6 Cod
 
 //* ===== Ephemeris Constants ================================================================== *//
 
-DEFINE_FP_CONSTANT(TWO_P4, std::pow(2.0, 4));     //! 2^4
-DEFINE_FP_CONSTANT(TWO_N5, std::pow(2.0, -5));    //! 2^-5
-DEFINE_FP_CONSTANT(TWO_N19, std::pow(2.0, -19));  //! 2^-19
-DEFINE_FP_CONSTANT(TWO_N29, std::pow(2.0, -29));  //! 2^-29
-DEFINE_FP_CONSTANT(TWO_N31, std::pow(2.0, -31));  //! 2^-31
-DEFINE_FP_CONSTANT(TWO_N33, std::pow(2.0, -33));  //! 2^-33
-DEFINE_FP_CONSTANT(TWO_N43, std::pow(2.0, -43));  //! 2^-43
-DEFINE_FP_CONSTANT(TWO_N55, std::pow(2.0, -55));  //! 2^-55
+// Used for generating upper and lower limits on different parameters
+template<int Power, typename Float = double>
+constexpr Float PowerOfTwo()
+{
+  return static_cast<Float>( std::pow(2.0,Power) );
+}
+
 DEFINE_FP_CONSTANT(HALF_WEEK, 302400.0);          //! half GPS week [s]
 DEFINE_FP_CONSTANT(WEEK, 604800.0);               //! GPS week [s]
 // TODO: add scale factors for ephemeris other than GPS
