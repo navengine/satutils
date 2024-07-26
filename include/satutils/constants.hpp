@@ -79,61 +79,134 @@ enum CodeId {
     GalileoE6CS
 };
 
-template <typename Float = double>
-constexpr Float CodeRate(CodeId code) {
-    switch (code) {
-        case GPSCA:
-            return GPS_CA_CODE_RATE<Float>;
-        case GPSL1C:
-            return GPS_CA_CODE_RATE<Float>;
-        case GPSL2CM:
-            return GPS_L2_CODE_RATE<Float>;
-        case GPSL2CL:
-            return GPS_L2_CODE_RATE<Float>;
-        case GPSL5I:
-            return GPS_L5_CODE_RATE<Float>;
-        case GPSL5Q:
-            return GPS_L5_CODE_RATE<Float>;
-        case GalileoE1OS:
-            return GPS_CA_CODE_RATE<Float>;
-        case GalileoE5A:
-            return GPS_L5_CODE_RATE<Float>;
-        case GalileoE5B:
-            return GPS_L5_CODE_RATE<Float>;
-        case GalileoE6CS:
-            return GALILEO_E6_CODE_RATE<Float>;
-        default:
-            assert(false);
-            return 0;
-    }
+template<CodeId Code, typename Float = double>
+constexpr Float CodeRate()
+{
+  if constexpr ((Code == GPSCA) || (Code == GPSL1C)) {
+    return GPS_CA_CODE_RATE<Float>;
+  }
+  else if constexpr ((Code == GPSL2CM) || (Code == GPSL2CL)) {
+    return GPS_L2_CODE_RATE<Float>;
+  }
+  else if constexpr ((Code == GPSL5I) || (Code == GPSL5Q)) {
+    return GPS_L5_CODE_RATE<Float>;
+  }
+  else if constexpr (Code == GalileoE1OS) {
+    return GPS_CA_CODE_RATE<Float>;
+  }
+  else if constexpr ((Code == GalileoE5A) || (Code == GalileoE5B)) {
+    return GPS_L5_CODE_RATE<Float>;
+  }
+  else if constexpr (Code == GalileoE6CS) {
+    return GALILEO_E6_CODE_RATE<Float>;
+  }
+  else {
+    assert(false);
+    return 0;
+  }
 }
 
-constexpr size_t CodeLength(CodeId code) {
-    switch (code) {
-        case GPSCA:
-            return GPS_CA_CODE_LENGTH;
-        case GPSL1C:
-            return GPS_CA_CODE_LENGTH;
-        case GPSL2CM:
-            return GPS_L2CM_CODE_LENGTH;
-        case GPSL2CL:
-            return GPS_L2CL_CODE_LENGTH;
-        case GPSL5I:
-            return GPS_L5_CODE_LENGTH;
-        case GPSL5Q:
-            return GPS_L5_CODE_LENGTH;
-        case GalileoE1OS:
-            return GALILEO_E1_CODE_LENGTH;
-        case GalileoE5A:
-            return GALILEO_E5_CODE_LENGTH;
-        case GalileoE5B:
-            return GALILEO_E5_CODE_LENGTH;
-        case GalileoE6CS:
-            return GALILEO_E6_CODE_LENGTH;
-        default:
-            assert(false);
-            return 0;
-    }
+template<typename Float = double>
+constexpr Float CodeRate(CodeId code)
+{
+  switch(code) {
+    case GPSCA:
+    case GPSL1C:
+    case GalileoE1OS:
+      return GPS_CA_CODE_RATE<Float>;
+    case GPSL2CM:
+    case GPSL2CL:
+      return GPS_L2_CODE_RATE<Float>;
+    case GPSL5I:
+    case GPSL5Q:
+    case GalileoE5A:
+    case GalileoE5B:
+      return GPS_L5_CODE_RATE<Float>;
+    case GalileoE6CS:
+      return GALILEO_E6_CODE_RATE<Float>;
+    default:
+      assert(false);
+      return 0;
+  }
+}
+
+template<CodeId Code>
+constexpr std::size_t CodeLength()
+{
+  if constexpr ((Code == GPSCA) || (Code == GPSL1C)) {
+    return GPS_CA_CODE_LENGTH;
+  }
+  else if constexpr (Code == GPSL2CM) {
+    return GPS_L2CM_CODE_LENGTH;
+  }
+  else if constexpr (Code == GPSL2CL) {
+    return GPS_L2CL_CODE_LENGTH;
+  }
+  else if constexpr ((Code == GPSL5I) || (Code == GPSL5Q)) {
+    return GPS_L5_CODE_LENGTH;
+  }
+  else if constexpr (Code == GalileoE1OS) {
+    return GALILEO_E1_CODE_LENGTH;
+  }
+  else if constexpr ((Code == GalileoE5A) || (Code == GalileoE5B)) {
+    return GALILEO_E5_CODE_LENGTH;
+  }
+  else if constexpr (Code == GalileoE6CS) {
+    return GALILEO_E6_CODE_LENGTH;
+  }
+  else {
+    assert(false);
+    return 0;
+  }
+}
+
+constexpr std::size_t CodeLength(CodeId code)
+{
+  switch(code) {
+    case GPSCA:
+    case GPSL1C:
+      return GPS_CA_CODE_LENGTH;
+    case GPSL2CM:
+      return GPS_L2CM_CODE_LENGTH;
+    case GPSL2CL:
+      return GPS_L2CL_CODE_LENGTH;
+    case GPSL5I:
+    case GPSL5Q:
+    case GalileoE1OS:
+    case GalileoE5A:
+    case GalileoE5B:
+    case GalileoE6CS:
+    default:
+      assert(false);
+      return 0;
+  }
+}
+
+template<CodeId Code, typename Float = double>
+constexpr Float CarrierFrequency()
+{
+  if constexpr ((Code == GPSCA) || (Code == GPSL1C)) {
+    return GPS_L1_FREQUENCY<Float>;
+  }
+  else if constexpr ((Code == GPSL2CM) || (Code == GPSL2CL)) {
+    return GPS_L2_FREQUENCY<Float>;
+  }
+  else if constexpr ((Code == GPSL5I) || (Code == GPSL5Q)) {
+    return GPS_L5_FREQUENCY<Float>;
+  }
+  else if constexpr (Code == GalileoE1OS) {
+    return GPS_L1_FREQUENCY<Float>;
+  }
+  else if constexpr ((Code == GalileoE5A) || (Code == GalileoE5B)) {
+    return GALILEO_E5_FREQUENCY<Float>;
+  }
+  else if constexpr (Code == GalileoE6CS) {
+    return GALILEO_E6_FREQUENCY<Float>;
+  }
+  else {
+    assert(false);
+    return 0;
+  }
 }
 
 template <typename Float = double>
@@ -165,33 +238,70 @@ constexpr Float CarrierFrequency(CodeId code) {
     }
 }
 
-template <typename Float = double>
-constexpr Float DataRate(CodeId code) {
-    switch (code) {
-        case GPSCA:
-            return GPS_DATA_BIT_RATE<Float>;
-        case GPSL1C:
-            return GPS_DATA_BIT_RATE<Float>;
-        case GPSL2CM:
-            return GPS_DATA_BIT_RATE<Float>;
-        case GPSL2CL:
-            return GPS_DATA_BIT_RATE<Float>;
-        case GPSL5I:
-            return GPS_DATA_BIT_RATE<Float>;
-        case GPSL5Q:
-            return GPS_DATA_BIT_RATE<Float>;
-        case GalileoE1OS:
-            return GALILEO_E1_DATA_RATE<Float>;
-        case GalileoE5A:
-            return GALILEO_E5A_DATA_RATE<Float>;
-        case GalileoE5B:
-            return GALILEO_E5B_DATA_RATE<Float>;
-        case GalileoE6CS:
-            return GALILEO_E6_DATA_RATE<Float>;
-        default:
-            assert(false);
-            return 0;
-    }
+template<CodeId Code, typename Float = double>
+constexpr Float AngularFrequency()
+{
+  return CarrierFrequency<Code,Float>()
+        * std::numbers::pi_v<Float> * static_cast<Float>(2);
+}
+
+template<typename Float = double>
+constexpr Float AngularFrequency(CodeId code)
+{
+  return CarrierFrequency<Float>(code)
+        * std::numbers::pi_v<Float> * static_cast<Float>(2);
+}
+
+template<CodeId Code, typename Float = double>
+constexpr Float DataRate()
+{
+  if constexpr (
+    (Code == GPSCA) || (Code == GPSL1C) || (Code == GPSL2CL) ||
+    (Code == GPSL2CM) || (Code == GPSL5I) || (Code == GPSL5Q)
+  ) {
+    return GPS_DATA_BIT_RATE<Float>;
+  }
+  else if constexpr (Code == GalileoE1OS) {
+    return GALILEO_E1_DATA_RATE<Float>;
+  }
+  else if constexpr (Code == GalileoE5A) {
+    return GALILEO_E5A_DATA_RATE<Float>;
+  }
+  else if constexpr (Code == GalileoE5B) {
+    return GALILEO_E5B_DATA_RATE<Float>;
+  }
+  else if constexpr (Code == GalileoE6CS) {
+    return GALILEO_E6_DATA_RATE<Float>;
+  }
+  else {
+    assert(false);
+    return 0;
+  }
+}
+
+template<typename Float = double>
+constexpr Float DataRate(CodeId code)
+{
+  switch(code) {
+    case GPSCA:
+    case GPSL1C:
+    case GPSL2CM:
+    case GPSL2CL:
+    case GPSL5I:
+    case GPSL5Q:
+      return GPS_DATA_BIT_RATE<Float>;
+    case GalileoE1OS:
+      return GALILEO_E1_DATA_RATE<Float>;
+    case GalileoE5A:
+      return GALILEO_E5A_DATA_RATE<Float>;
+    case GalileoE5B:
+      return GALILEO_E5B_DATA_RATE<Float>;
+    case GalileoE6CS:
+      return GALILEO_E6_DATA_RATE<Float>;
+    default:
+      assert(false);
+      return 0;
+  }
 }
 
 }  // namespace satutils
