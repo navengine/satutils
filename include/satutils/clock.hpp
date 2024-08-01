@@ -137,14 +137,14 @@ class PolyClock : public Clock<Float> {
 
     //! === PRINT ===
     void print() {
-        std::cout << "--- Polynomial Clock Fit ---" << std::endl
-                  << "a_f2:  " << a_f2 << std::endl
-                  << "a_f1:  " << a_f1 << std::endl
-                  << "a_f0:  " << a_f0 << std::endl
-                  << "T_GD:  " << T_GD << std::endl
-                  << "t_oc:  " << t_oc << std::endl
-                  << "IODC:  " << IODC << std::endl
-                  << "----------------------------" << std::endl;
+        std::cout << "--- Polynomial Clock Fit ---" << '\n'
+                  << "a_f2:  " << a_f2 << '\n'
+                  << "a_f1:  " << a_f1 << '\n'
+                  << "a_f0:  " << a_f0 << '\n'
+                  << "T_GD:  " << T_GD << '\n'
+                  << "t_oc:  " << t_oc << '\n'
+                  << "IODC:  " << IODC << '\n'
+                  << "----------------------------" << '\n';
     }
 
   protected:

@@ -12,6 +12,8 @@
 #define SATUTILS_CONSTANTS_HPP
 
 #include <cmath>
+#include <numbers>
+
 #include <navtools/types.hpp>
 
 namespace satutils {
@@ -20,7 +22,7 @@ namespace satutils {
 
 DEFINE_FP_CONSTANT(GPS_PI, 3.1415926535898);                 //! PI defined by IS-GPS-200N
 template <typename Float>                                    //
-inline constexpr Float GPS_TWOPI = 2.0 * GPS_PI<Float>;      //! 2 * GPS_PI
+inline constexpr Float GPS_TWOPI = static_cast<Float>(2) * GPS_PI<Float>;      //! 2 * GPS_PI
 DEFINE_FP_CONSTANT(GPS_L1_FREQUENCY, 1.57542e9);             //! GPS L1 frequency [Hz]
 DEFINE_FP_CONSTANT(GPS_L2_FREQUENCY, 1.22760e9);             //! GPS L2 frequency [Hz]
 DEFINE_FP_CONSTANT(GPS_L5_FREQUENCY, 1.17645e9);             //! GPS L5 frequency [Hz]

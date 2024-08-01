@@ -174,25 +174,25 @@ class KeplerEphemeris : public Ephemeris<Float> {
 
     //! === PRINT ==
     void print() {
-        std::cout << "--- Kepler Ephemerides ---" << std::endl
-                  << "M_0:       " << M_0 << std::endl
-                  << "delta_n:   " << delta_n << std::endl
-                  << "e:         " << e << std::endl
-                  << "A:         " << A << std::endl
-                  << "OMEGA_0:   " << OMEGA_0 << std::endl
-                  << "i_0:       " << i_0 << std::endl
-                  << "omega:     " << omega << std::endl
-                  << "OMEGA_DOT: " << OMEGA_DOT << std::endl
-                  << "IDOT:      " << IDOT << std::endl
-                  << "C_uc:      " << C_uc << std::endl
-                  << "C_us:      " << C_us << std::endl
-                  << "C_rc:      " << C_rc << std::endl
-                  << "C_rs:      " << C_rs << std::endl
-                  << "C_ic:      " << C_ic << std::endl
-                  << "C_is:      " << C_is << std::endl
-                  << "t_oe:      " << t_oe << std::endl
-                  << "IODE:      " << IODE << std::endl
-                  << "--------------------------" << std::endl;
+        std::cout << "--- Kepler Ephemerides ---" << '\n'
+                  << "M_0:       " << M_0 << '\n'
+                  << "delta_n:   " << delta_n << '\n'
+                  << "e:         " << e << '\n'
+                  << "A:         " << A << '\n'
+                  << "OMEGA_0:   " << OMEGA_0 << '\n'
+                  << "i_0:       " << i_0 << '\n'
+                  << "omega:     " << omega << '\n'
+                  << "OMEGA_DOT: " << OMEGA_DOT << '\n'
+                  << "IDOT:      " << IDOT << '\n'
+                  << "C_uc:      " << C_uc << '\n'
+                  << "C_us:      " << C_us << '\n'
+                  << "C_rc:      " << C_rc << '\n'
+                  << "C_rs:      " << C_rs << '\n'
+                  << "C_ic:      " << C_ic << '\n'
+                  << "C_is:      " << C_is << '\n'
+                  << "t_oe:      " << t_oe << '\n'
+                  << "IODE:      " << IODE << '\n'
+                  << "--------------------------" << '\n';
     }
 
   protected:
@@ -411,18 +411,18 @@ class SGP4Ephemeris : public Ephemeris<Float> {
 
     //! === PRINT ==
     void print() {
-        std::cout << "--- SGP4 Ephemerides ---" << std::endl
-                  << "t_oe:    " << M_0 << std::endl
-                  << "n_dot:   " << n_dot << std::endl
-                  << "n_ddot:  " << n_ddot << std::endl
-                  << "B_star:  " << B_star << std::endl
-                  << "i_0:     " << i_0 << std::endl
-                  << "OMEGA_0: " << OMEGA_0 << std::endl
-                  << "e_0:     " << e_0 << std::endl
-                  << "omega:   " << omega << std::endl
-                  << "M_0:     " << M_0 << std::endl
-                  << "n_0:     " << n_0 << std::endl
-                  << "------------------------" << std::endl;
+        std::cout << "--- SGP4 Ephemerides ---" << '\n'
+                  << "t_oe:    " << M_0 << '\n'
+                  << "n_dot:   " << n_dot << '\n'
+                  << "n_ddot:  " << n_ddot << '\n'
+                  << "B_star:  " << B_star << '\n'
+                  << "i_0:     " << i_0 << '\n'
+                  << "OMEGA_0: " << OMEGA_0 << '\n'
+                  << "e_0:     " << e_0 << '\n'
+                  << "omega:   " << omega << '\n'
+                  << "M_0:     " << M_0 << '\n'
+                  << "n_0:     " << n_0 << '\n'
+                  << "------------------------" << '\n';
     }
 
   protected:

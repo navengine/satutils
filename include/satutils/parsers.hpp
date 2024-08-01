@@ -168,6 +168,7 @@ class RinexParser {
                 galileo_idx_[sv_id].push_back(std::make_pair(idx, gt));
             }
         }
+        fid_.clear(); // needed because end of file flag was likely set
     }
 
     //! === PARSEHEADER ===
