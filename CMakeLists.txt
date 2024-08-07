@@ -39,6 +39,7 @@ find_package(navtools REQUIRED)
 
 # --- Add Library Soruce Files ---
 set(SATUTILS_HDRS
+    include/satutils/common.hpp
     include/satutils/atmosphere.hpp
     include/satutils/clock.hpp
     include/satutils/code-gen.hpp

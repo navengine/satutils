@@ -13,6 +13,7 @@
 
 #include <cmath>
 #include <numbers>
+#include <cassert>
 
 #include <navtools/types.hpp>
 

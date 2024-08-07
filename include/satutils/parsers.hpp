@@ -27,14 +27,13 @@
 #include <string>
 #include <vector>
 
+#include <satutils/common.hpp>
 #include "navtools/constants.hpp"
 #include "satutils/atmosphere.hpp"
 #include "satutils/clock.hpp"
 #include "satutils/ephemeris.hpp"
 
 namespace satutils {
-
-using namespace navtools;
 
 // enum ConstellationType = {GPS = 0, Galileo = 1, Glonass = 2};
 

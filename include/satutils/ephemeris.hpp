@@ -21,12 +21,12 @@
 #include <cmath>
 #include <string>
 
-#include "navtools/constants.hpp"
-#include "satutils/clock.hpp"
+#include <satutils/common.hpp>
+#include <navtools/constants.hpp>
+#include <navtools/math.hpp>
+#include <satutils/clock.hpp>
 
 namespace satutils {
-
-using namespace navtools;
 
 //* ===== Ephemeris ============================================================================ *//
 
@@ -209,10 +209,11 @@ class KeplerEphemeris : public Ephemeris<Float> {
     Float cosE_{0.0};
     Float sinE_{0.0};
     Float den_{0.0};
+    // static constexpr Float GPS_WGS84_MU = static_cast<Float>(3.986005e14);
 
     //! === INIT ===
     void init() {
-        n_ = std::sqrt(GM<Float> / (A * A * A)) + delta_n;
+        n_ = std::sqrt(WGS84_MU<Float> / (A * A * A)) + delta_n;
         SQ1ME2_ = std::sqrt(1.0 - WGS84_E2<Float>);
         FESQA_ = F<Float> * e * std::sqrt(A);
     }
@@ -226,7 +227,7 @@ class KeplerEphemeris : public Ephemeris<Float> {
             E_k += dE;
             if (dE < 1e-15) break;
         }
-        return std::fmod(E_k + GPS_TWOPI<Float>, GPS_TWOPI<Float>);
+        return E_k;
     }
     Float EccentricAnomalyT(const Float& t_k) {
         Float M_k = std::fmod(M_0 + n_ * t_k + GPS_TWOPI<Float>, GPS_TWOPI<Float>);
@@ -264,30 +265,31 @@ class KeplerEphemeris : public Ephemeris<Float> {
         Float t_k = CheckTime(tow - t_oe);
 
         // mean anomaly
-        Float M_k = std::fmod(M_0 + n_ * t_k + GPS_TWOPI<Float>, GPS_TWOPI<Float>);
+        Float M_k = M_0 + (n_ * t_k);
+        CircMod2Pi(M_k);
 
         // eccentric anomaly
         Float E_k = EccentricAnomalyM(M_k);
+        CircMod2Pi(E_k);
         cosE_ = std::cos(E_k);
         sinE_ = std::sin(E_k);
         den_ = 1.0 - e * cosE_;
 
         // true anomaly
-        Float v_k = 2.0 * std::atan2(std::sqrt((1.0 + e) / (1.0 - e)) * std::tan(0.5 * E_k), 1.0);
+        Float v_k = 2.0 * std::atan( std::sqrt((1.0 + e) / (1.0 - e)) * std::tan(0.5 * E_k) );
 
         // argument of latitude
-        Float Phi_k = std::fmod(v_k + omega, GPS_TWOPI<Float>);
+        Float Phi_k = v_k + omega;
+        CircMod2Pi(Phi_k);
         Float cos2Phi = std::cos(2.0 * Phi_k);
         Float sin2Phi = std::sin(2.0 * Phi_k);
 
         // corrected argument latitude, radius, inclination, and latitude of ascending node
         Float u_k = Phi_k + (C_us * sin2Phi + C_uc * cos2Phi);
-        Float r_k = A * den_ + (C_rs * sin2Phi + C_rc * cos2Phi);
-        Float i_k = i_0 + IDOT * t_k + (C_is * sin2Phi + C_ic * sin2Phi);
-        Float OMEGA_k = std::fmod(
-                OMEGA_0 + (OMEGA_DOT - WGS84_OMEGA<Float>)*t_k - (WGS84_OMEGA<Float> * t_oe) +
-                        GPS_TWOPI<Float>,
-                GPS_TWOPI<Float>);
+        Float r_k = (A * den_) + (C_rs * sin2Phi + C_rc * cos2Phi);
+        Float i_k = i_0 + (IDOT * t_k) + (C_is * sin2Phi + C_ic * sin2Phi);
+        Float OMEGA_k = OMEGA_0 + ((OMEGA_DOT - WGS84_OMEGA<Float>)*t_k) - (WGS84_OMEGA<Float> * t_oe);
+        CircMod2Pi(OMEGA_k);
         Float cosu = std::cos(u_k);
         Float sinu = std::sin(u_k);
         Float cosi = std::cos(i_k);
@@ -298,9 +300,9 @@ class KeplerEphemeris : public Ephemeris<Float> {
         // position
         Float x_k_prime = r_k * cosu;  // x-position in orbital frame
         Float y_k_prime = r_k * sinu;  // y-position in orbital frame
-        r_eb_e_(1) = x_k_prime * cosOMEGA - y_k_prime * cosi * sinOMEGA;
-        r_eb_e_(2) = x_k_prime * sinOMEGA + y_k_prime * cosi * cosOMEGA;
-        r_eb_e_(3) = y_k_prime * sini;
+        r_eb_e_(0) = (x_k_prime * cosOMEGA) - (y_k_prime * cosi * sinOMEGA);
+        r_eb_e_(1) = (x_k_prime * sinOMEGA) + (y_k_prime * cosi * cosOMEGA);
+        r_eb_e_(2) = y_k_prime * sini;
 
         if constexpr (CalcVel) {
             // derivatives
@@ -317,30 +319,30 @@ class KeplerEphemeris : public Ephemeris<Float> {
                     rdot_k * cosu - r_k * udot_k * sinu;  // x-velocity in orbital frame
             Float ydot_k_prime =
                     rdot_k * sinu + r_k * udot_k * cosu;  // y-velocity in orbital frame
-            v_eb_e_(1) = -(x_k_prime * OMEGAdot_k * sinOMEGA) + (xdot_k_prime * cosOMEGA) -
+            v_eb_e_(0) = -(x_k_prime * OMEGAdot_k * sinOMEGA) + (xdot_k_prime * cosOMEGA) -
                          (ydot_k_prime * sinOMEGA * cosi) -
                          (y_k_prime * (OMEGAdot_k * cosOMEGA * cosi - idot_k * sinOMEGA * sini));
-            v_eb_e_(2) = (x_k_prime * OMEGAdot_k * cosOMEGA) + (xdot_k_prime * sinOMEGA) +
+            v_eb_e_(1) = (x_k_prime * OMEGAdot_k * cosOMEGA) + (xdot_k_prime * sinOMEGA) +
                          (ydot_k_prime * cosOMEGA * cosi) -
                          (y_k_prime * (OMEGAdot_k * sinOMEGA * cosi + idot_k * cosOMEGA * sini));
-            v_eb_e_(3) = (ydot_k_prime * sini) + (y_k_prime * idot_k * cosi);
+            v_eb_e_(2) = (ydot_k_prime * sini) + (y_k_prime * idot_k * cosi);
 
             if constexpr (CalcAccel) {
                 Float tmp = WGS84_R0<Float> / r_k;
                 Float r2 = r_k * r_k;
                 Float r3 = r2 * r_k;
-                Float F = -1.5 * J2<Float> * (GM<Float> / r2) * (tmp * tmp);
+                Float F = -1.5 * J2<Float> * (WGS84_MU<Float> / r2) * (tmp * tmp);
                 Float OMEGA_DOT_E2 = WGS84_OMEGA<Float> * WGS84_OMEGA<Float>;
                 tmp = 5.0 * std::pow(r_eb_e_(2) / r_k, 2);
 
-                a_eb_e_(1) = -GM<Float> * (r_eb_e_(0) / r3) +
+                a_eb_e_(0) = -WGS84_MU<Float> * (r_eb_e_(0) / r3) +
                              F * ((1.0 - tmp) * (r_eb_e_(0) / r_k)) +
                              (2.0 * v_eb_e_(1) * WGS84_OMEGA<Float>)+(r_eb_e_(0) * OMEGA_DOT_E2);
-                a_eb_e_(2) = -GM<Float> * (r_eb_e_(1) / r3) +
+                a_eb_e_(1) = -WGS84_MU<Float> * (r_eb_e_(1) / r3) +
                              F * ((1.0 - tmp) * (r_eb_e_(1) / r_k)) -
                              (2.0 * v_eb_e_(0) * WGS84_OMEGA<Float>)+(r_eb_e_(1) * OMEGA_DOT_E2);
-                a_eb_e_(3) =
-                        -GM<Float> * (r_eb_e_(2) / r3) + F * ((3.0 - tmp) * (r_eb_e_(2) / r_k));
+                a_eb_e_(2) =
+                        -WGS84_MU<Float> * (r_eb_e_(2) / r3) + F * ((3.0 - tmp) * (r_eb_e_(2) / r_k));
             }
         }
     }
