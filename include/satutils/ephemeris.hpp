@@ -81,7 +81,7 @@ class Ephemeris {
 
     //! === PRINT ===
     /// @brief      prints out each of the ephemeris parameters
-    virtual void print() = 0;
+    virtual void print() const = 0;
 
   protected:
 };
@@ -173,7 +173,7 @@ class KeplerEphemeris : public Ephemeris<Float> {
     }
 
     //! === PRINT ==
-    void print() {
+    void print() const {
         std::cout << "--- Kepler Ephemerides ---" << '\n'
                   << "M_0:       " << M_0 << '\n'
                   << "delta_n:   " << delta_n << '\n'
@@ -412,7 +412,7 @@ class SGP4Ephemeris : public Ephemeris<Float> {
     }
 
     //! === PRINT ==
-    void print() {
+    void print() const {
         std::cout << "--- SGP4 Ephemerides ---" << '\n'
                   << "t_oe:    " << M_0 << '\n'
                   << "n_dot:   " << n_dot << '\n'

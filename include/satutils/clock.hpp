@@ -96,7 +96,7 @@ class Clock {
 
     //! === PRINT ===
     /// @brief      prints out each of the clock parameters
-    virtual void print() = 0;
+    virtual void print() const = 0;
 
   protected:
 };
@@ -136,7 +136,7 @@ class PolyClock : public Clock<Float> {
     }
 
     //! === PRINT ===
-    void print() {
+    void print() const {
         std::cout << "--- Polynomial Clock Fit ---" << '\n'
                   << "a_f2:  " << a_f2 << '\n'
                   << "a_f1:  " << a_f1 << '\n'

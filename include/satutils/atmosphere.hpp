@@ -20,8 +20,6 @@
 #include <satutils/common.hpp>
 #include <satutils/constants.hpp>
 
-// TODO: add models here
-
 namespace satutils {
 
 //* ===== Broadcast Ionosphere Corrections ===================================================== *//
@@ -29,7 +27,7 @@ namespace satutils {
 class Ionosphere {
 public:
   virtual ~Ionosphere() = default;
-  virtual void print() = 0;
+  virtual void print() const = 0;
 };
 
 template <typename Float>
@@ -49,7 +47,7 @@ public:
   Float beta_3{0.0};
 
   //! === PRINT ===
-  void print() {
+  void print() const {
       std::cout << "--- Klobuchar Parameters ---" << '\n'
                 << "alpha_0:  " << alpha_0 << '\n'
                 << "alpha_1:  " << alpha_1 << '\n'

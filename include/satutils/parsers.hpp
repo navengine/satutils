@@ -77,7 +77,7 @@ class RinexParser {
                      gps_idx_.begin();
              m != gps_idx_.end();
              ++m) {
-            std::cout << m->first << " ";
+            // std::cout << m->first << " ";
 
             KeplerEphemeris<Float> tmp_eph;
             PolyClock<Float> tmp_clk;
@@ -87,7 +87,7 @@ class RinexParser {
             clk.push_back(tmp_clk);
             atm.push_back(tmp_atm);
 
-            std::cout << std::endl;
+            // std::cout << '\n';
         }
     }
 
