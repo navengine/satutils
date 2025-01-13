@@ -33,6 +33,7 @@ int main() {
             << "\ni0: " << it->second.i0 << "\nn0: " << it->second.n0
             << "\nnDot: " << it->second.nDot << "\nnDDot: " << it->second.nDDot
             << "\nm0: " << it->second.m0 << "\n\n";
+  std::remove(filename.c_str());
 
   //! ==============================================================================================
 
@@ -112,5 +113,6 @@ int main() {
               << "\nbeta1: " << it.second.first.b1 << "\nbeta2: " << it.second.first.b2
               << "\nbeta3: " << it.second.first.b3 << "\n\n";
   }
+  std::remove(filename.c_str());
   return 0;
 }
