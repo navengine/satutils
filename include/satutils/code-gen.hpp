@@ -16,6 +16,10 @@
 #ifndef SATUTILS_CODE_GEN_HPP
 #define SATUTILS_CODE_GEN_HPP
 
+#include <cstdint>
+#include <cassert>
+#include <array>
+
 #include <navtools/binary-ops.hpp>
 #include <navtools/constants.hpp>
 
@@ -81,6 +85,11 @@ void CodeGenCA(bool sequence[1023], uint8_t prn) {
     navtools::SetBitTo<true>(G2, 0, feedback2);
   }
 };
+
+void CodeGenCA(std::array<bool,1023>& sequence, const uint8_t prn)
+{
+  CodeGenCA(sequence.data(), prn);
+}
 
 };  // namespace satutils
 
