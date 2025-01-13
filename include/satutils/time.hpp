@@ -23,8 +23,6 @@
 
 namespace satutils {
 
-int yr = 2005;
-
 constexpr std::chrono::system_clock::time_point GPS_REF_EPOCH =
     std::chrono::sys_days{std::chrono::January / 6 / 1980};
 
