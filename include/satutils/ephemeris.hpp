@@ -83,6 +83,43 @@ struct Sgp4Elements {
 template <typename T = double>
 class KeplerEphem : public KeplerElements<T> {
  public:
+  KeplerEphem<T>() = default;
+  KeplerEphem<T>(const KeplerElements<T> &eph) {
+    SetEphem(eph);
+  };
+
+  /**
+   * *=== SetEphem ===*
+   * @brief set the ephemeris elements
+   */
+  void SetEphem(const KeplerElements<T> &eph) {
+    this->iode = eph.iode;
+    this->iodc = eph.iodc;
+    this->toe = eph.toe;
+    this->toc = eph.toc;
+    this->tgd = eph.tgd;
+    this->af2 = eph.af2;
+    this->af1 = eph.af1;
+    this->af0 = eph.af0;
+    this->e = eph.e;
+    this->sqrtA = eph.sqrtA;
+    this->deltan = eph.deltan;
+    this->m0 = eph.m0;
+    this->omega0 = eph.omega0;
+    this->omega = eph.omega;
+    this->omegaDot = eph.omegaDot;
+    this->i0 = eph.i0;
+    this->iDot = eph.iDot;
+    this->cuc = eph.cuc;
+    this->cus = eph.cus;
+    this->cic = eph.cic;
+    this->cis = eph.cis;
+    this->crc = eph.crc;
+    this->crs = eph.crs;
+    this->ura = eph.ura;
+    this->health = eph.health;
+  };
+
   /**
    * *=== CalcNavStates ===
    * @brief Calculates satellite position, velocity, and acceleration using ephemeris
@@ -96,10 +133,10 @@ class KeplerEphem : public KeplerElements<T> {
    */
   template <bool calc_acc = false>
   void CalcNavStates(
-      Eigen::Vector<T, 3> &clk,
-      Eigen::Vector<T, 3> &pos,
-      Eigen::Vector<T, 3> &vel,
-      Eigen::Vector<T, 3> &acc,
+      Eigen::Ref<Eigen::Vector<T, Eigen::Dynamic>> clk,
+      Eigen::Ref<Eigen::Vector<T, Eigen::Dynamic>> pos,
+      Eigen::Ref<Eigen::Vector<T, Eigen::Dynamic>> vel,
+      Eigen::Ref<Eigen::Vector<T, Eigen::Dynamic>> acc,
       const T &transmit_time) {
     if (!initialized_) {
       init();

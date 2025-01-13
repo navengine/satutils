@@ -32,6 +32,65 @@ namespace satutils {
 template <typename T = double>
 class GpsLnav : public KeplerElements<T>, KlobucharElements<T> {
  public:
+  GpsLnav<T>() = default;
+  GpsLnav<T>(const KeplerElements<T> &eph) {
+    SetEphem(eph);
+  };
+  GpsLnav<T>(const KlobucharElements<T> &klob) {
+    SetKlobuchar(klob);
+  };
+  GpsLnav<T>(const KeplerElements<T> &eph, const KlobucharElements<T> &klob) {
+    SetEphem(eph);
+    SetKlobuchar(klob);
+  };
+
+  /**
+   * *=== SetEphem ===*
+   * @brief set the ephemeris elements
+   */
+  void SetEphem(const KeplerElements<T> &eph) {
+    this->iode = eph.iode;
+    this->iodc = eph.iodc;
+    this->toe = eph.toe;
+    this->toc = eph.toc;
+    this->tgd = eph.tgd;
+    this->af2 = eph.af2;
+    this->af1 = eph.af1;
+    this->af0 = eph.af0;
+    this->e = eph.e;
+    this->sqrtA = eph.sqrtA;
+    this->deltan = eph.deltan;
+    this->m0 = eph.m0;
+    this->omega0 = eph.omega0;
+    this->omega = eph.omega;
+    this->omegaDot = eph.omegaDot;
+    this->i0 = eph.i0;
+    this->iDot = eph.iDot;
+    this->cuc = eph.cuc;
+    this->cus = eph.cus;
+    this->cic = eph.cic;
+    this->cis = eph.cis;
+    this->crc = eph.crc;
+    this->crs = eph.crs;
+    this->ura = eph.ura;
+    this->health = eph.health;
+  };
+
+  /**
+   * *=== SetKlobuchar ===*
+   * @brief Set the Klobuchar elements
+   */
+  void SetKlobuchar(const KlobucharElements<T> &klob) {
+    this->a0 = klob.a0;
+    this->a1 = klob.a1;
+    this->a2 = klob.a2;
+    this->a3 = klob.a3;
+    this->b0 = klob.b0;
+    this->b1 = klob.b1;
+    this->b2 = klob.b2;
+    this->b3 = klob.b3;
+  }
+
   /**
    * *=== SetNextBit ===*
    * @brief Read the next navigation data bit

@@ -46,6 +46,26 @@ struct KlobucharElements {
 template <typename N = double>
 class IonoModel : public KlobucharElements<N> {
  public:
+  IonoModel<N>() = default;
+  IonoModel<N>(const KlobucharElements<N> &klob) {
+    SetKlobuchar(klob);
+  };
+
+  /**
+   * *=== SetKlobuchar ===*
+   * @brief Set the Klobuchar elements
+   */
+  void SetKlobuchar(const KlobucharElements<N> &klob) {
+    this->a0 = klob.a0;
+    this->a1 = klob.a1;
+    this->a2 = klob.a2;
+    this->a3 = klob.a3;
+    this->b0 = klob.b0;
+    this->b1 = klob.b1;
+    this->b2 = klob.b2;
+    this->b3 = klob.b3;
+  }
+
   /**
    * *=== CalcIonoDelay ===*
    * @brief Estimates the ionospheric delay based on the Klobuchar model
