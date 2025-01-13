@@ -133,10 +133,10 @@ class KeplerEphem : public KeplerElements<T> {
    */
   template <bool calc_acc = false>
   void CalcNavStates(
-      Eigen::Ref<Eigen::Vector<T, Eigen::Dynamic>> clk,
-      Eigen::Ref<Eigen::Vector<T, Eigen::Dynamic>> pos,
-      Eigen::Ref<Eigen::Vector<T, Eigen::Dynamic>> vel,
-      Eigen::Ref<Eigen::Vector<T, Eigen::Dynamic>> acc,
+      Eigen::Ref<Eigen::Vector<T, 3>> clk,
+      Eigen::Ref<Eigen::Vector<T, 3>> pos,
+      Eigen::Ref<Eigen::Vector<T, 3>> vel,
+      Eigen::Ref<Eigen::Vector<T, 3>> acc,
       const T &transmit_time) {
     if (!initialized_) {
       init();
