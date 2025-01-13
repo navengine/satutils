@@ -220,6 +220,18 @@ class KeplerEphem : public KeplerElements<T> {
     SQ1ME2_ = std::sqrt(1.0 - E2);                            // common eccentricity factor
   };
 
+  /**
+   * *=== GetEphemerides ===*
+   * @returns Current set of ephemerides
+   */
+  KeplerElements<T> GetEphemerides() {
+    return KeplerElements<T>{this->iode,   this->iodc, this->toe,    this->toc,   this->tgd,
+                             this->af2,    this->af1,  this->af0,    this->e,     this->sqrtA,
+                             this->deltan, this->m0,   this->omega0, this->omega, this->omegaDot,
+                             this->i0,     this->iDot, this->cuc,    this->cus,   this->cic,
+                             this->cis,    this->crc,  this->crs,    this->ura,   this->health};
+  };
+
  protected:
   /**
    * @brief Extra constants used by navigation processor
@@ -231,7 +243,7 @@ class KeplerEphem : public KeplerElements<T> {
   T SQ1ME2_;  // common eccentricity factor
 };
 
-template <typename T>
+template <typename T = double>
 class Sgp4Ephem : public Sgp4Elements<T> {
  public:
   /**

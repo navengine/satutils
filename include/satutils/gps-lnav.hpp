@@ -29,8 +29,8 @@
 
 namespace satutils {
 
-template <typename T>
-class GpsLnav {
+template <typename T = double>
+class GpsLnav : public KeplerElements<T>, KlobucharElements<T> {
  public:
   /**
    * *=== SetNextBit ===*
@@ -260,28 +260,28 @@ class GpsLnav {
     // Word 3
     week_ = static_cast<uint16_t>((subframe[2] & 0x3FF00000) >> 20);  // bits 1-10
     // l2_flag = static_cast<uint8_t>((subframe[2] & 0x000C0000) >> 18);     // bits 11-12
-    eph_.ura = static_cast<uint8_t>((subframe[2] & 0x0003C000) >> 14);    // bits 13-16
-    eph_.health = static_cast<uint8_t>((subframe[2] & 0x00003F00) >> 8);  // bits 17-22
+    this->ura = static_cast<uint8_t>((subframe[2] & 0x0003C000) >> 14);    // bits 13-16
+    this->health = static_cast<uint8_t>((subframe[2] & 0x00003F00) >> 8);  // bits 17-22
 
     // Word 7
     tmp1 = (subframe[6] & 0x00003FC0) >> 6;
-    eph_.tgd = navtools::TwosComp(tmp1, 8) * PowerOfTwo<-31, T>();  // bits 17-24
+    this->tgd = navtools::TwosComp(tmp1, 8) * PowerOfTwo<-31, T>();  // bits 17-24
 
     // Word 8
-    tmp1 = (subframe[2] & 0x000000C0) >> 6;          // bits 23-24 (word 3)
-    tmp2 = (subframe[7] & 0x3FC00000) >> 22;         // bits 1-8
-    eph_.iodc = static_cast<T>((tmp1 << 8) | tmp2);  //
-    eph_.toc = static_cast<T>((subframe[7] & 0x003FFFC0) >> 6) * PowerOfTwo<4, T>();  // bits 9-24
+    tmp1 = (subframe[2] & 0x000000C0) >> 6;           // bits 23-24 (word 3)
+    tmp2 = (subframe[7] & 0x3FC00000) >> 22;          // bits 1-8
+    this->iodc = static_cast<T>((tmp1 << 8) | tmp2);  //
+    this->toc = static_cast<T>((subframe[7] & 0x003FFFC0) >> 6) * PowerOfTwo<4, T>();  // bits 9-24
 
     // Word 9
     tmp1 = (subframe[8] & 0x000000C0) >> 22;
     tmp2 = (subframe[8] & 0x003FFFC0) >> 6;
-    eph_.af2 = navtools::TwosComp(tmp1, 8) * PowerOfTwo<-55, T>();   // bits 1-8
-    eph_.af1 = navtools::TwosComp(tmp2, 16) * PowerOfTwo<-43, T>();  // bits 9-24
+    this->af2 = navtools::TwosComp(tmp1, 8) * PowerOfTwo<-55, T>();   // bits 1-8
+    this->af1 = navtools::TwosComp(tmp2, 16) * PowerOfTwo<-43, T>();  // bits 9-24
 
     // word 10
     tmp1 = (subframe[9] & 0x3FFFFF00) >> 8;
-    eph_.af0 = navtools::TwosComp(tmp1, 22) * PowerOfTwo<-31, T>();  // bits 1-22
+    this->af0 = navtools::TwosComp(tmp1, 22) * PowerOfTwo<-31, T>();  // bits 1-22
   };
 
   /**
@@ -296,33 +296,34 @@ class GpsLnav {
 
     // Word 3
     tmp3 = (subframe[2] & 0x003FFFC0) >> 6;
-    eph_.iode = static_cast<T>((subframe[2] & 0x3FC00000) >> 22);   // bits 1-8
-    eph_.crs = navtools::TwosComp(tmp3, 16) * PowerOfTwo<-5, T>();  // bits 9-24
+    this->iode = static_cast<T>((subframe[2] & 0x3FC00000) >> 22);   // bits 1-8
+    this->crs = navtools::TwosComp(tmp3, 16) * PowerOfTwo<-5, T>();  // bits 9-24
 
     // Word 4-5
     tmp3 = (subframe[3] & 0x3FFFC000) >> 14;
-    eph_.deltan = navtools::TwosComp(tmp3, 16) * GPS_PI<T> * PowerOfTwo<-43, T>();  // bits 1-16
-    tmp1 = (subframe[3] & 0x00003FC0) >> 6;                                         // bits 17-24
-    tmp2 = (subframe[4] & 0x3FFFFFC0) >> 6;                                         // bits 1-24
+    this->deltan = navtools::TwosComp(tmp3, 16) * GPS_PI<T> * PowerOfTwo<-43, T>();  // bits 1-16
+    tmp1 = (subframe[3] & 0x00003FC0) >> 6;                                          // bits 17-24
+    tmp2 = (subframe[4] & 0x3FFFFFC0) >> 6;                                          // bits 1-24
     tmp3 = (tmp1 << 24) | tmp2;
-    eph_.m0 = navtools::TwosComp(tmp3, 32) * GPS_PI<T> * PowerOfTwo<-31, T>();
+    this->m0 = navtools::TwosComp(tmp3, 32) * GPS_PI<T> * PowerOfTwo<-31, T>();
 
     // Word 6 and 7
     tmp3 = (subframe[5] & 0x3FFFC000) >> 14;
-    eph_.cuc = navtools::TwosComp(tmp3, 16) * PowerOfTwo<-29, T>();  // bits 1-16
-    tmp1 = (subframe[5] & 0x00003FC0) >> 6;                          // bits 17-24
-    tmp2 = (subframe[6] & 0x3FFFFFC0) >> 6;                          // bits 1-24
-    eph_.e = static_cast<T>((tmp1 << 24) | tmp2) * PowerOfTwo<-33, T>();
+    this->cuc = navtools::TwosComp(tmp3, 16) * PowerOfTwo<-29, T>();  // bits 1-16
+    tmp1 = (subframe[5] & 0x00003FC0) >> 6;                           // bits 17-24
+    tmp2 = (subframe[6] & 0x3FFFFFC0) >> 6;                           // bits 1-24
+    this->e = static_cast<T>((tmp1 << 24) | tmp2) * PowerOfTwo<-33, T>();
 
     // Word 8 and 9
     tmp3 = (subframe[7] & 0x3FFFC000) >> 14;
-    eph_.cus = navtools::TwosComp(tmp3, 16) * PowerOfTwo<-29, T>();  // bits 1-16
-    tmp1 = (subframe[7] & 0x00003FC0) >> 6;                          // bits 17-24
-    tmp2 = (subframe[8] & 0x3FFFFFC0) >> 6;                          // bits 1-24
-    eph_.sqrtA = static_cast<T>((tmp1 << 24) | tmp2) * PowerOfTwo<-19, T>();
+    this->cus = navtools::TwosComp(tmp3, 16) * PowerOfTwo<-29, T>();  // bits 1-16
+    tmp1 = (subframe[7] & 0x00003FC0) >> 6;                           // bits 17-24
+    tmp2 = (subframe[8] & 0x3FFFFFC0) >> 6;                           // bits 1-24
+    this->sqrtA = static_cast<T>((tmp1 << 24) | tmp2) * PowerOfTwo<-19, T>();
 
     // Word 10
-    eph_.toe = static_cast<T>((subframe[9] & 0x3FFFC000) >> 14) * PowerOfTwo<-4, T>();  // bits 1-16
+    this->toe =
+        static_cast<T>((subframe[9] & 0x3FFFC000) >> 14) * PowerOfTwo<-4, T>();  // bits 1-16
     // fit_interval_alert_flag = bool((subframe[9] & 0x00002000) >> 13);           // bit 17
   };
 
@@ -338,36 +339,36 @@ class GpsLnav {
 
     // word 3 and 4
     tmp3 = (subframe[2] & 0x3FFFC000) >> 14;
-    eph_.cic = navtools::TwosComp(tmp3, 16) * PowerOfTwo<-29, T>();  // bits 1-16
-    tmp1 = (subframe[2] & 0x00003FC0) >> 6;                          // bits 17-24
-    tmp2 = (subframe[3] & 0x3FFFFFC0) >> 6;                          // bits 1-24
+    this->cic = navtools::TwosComp(tmp3, 16) * PowerOfTwo<-29, T>();  // bits 1-16
+    tmp1 = (subframe[2] & 0x00003FC0) >> 6;                           // bits 17-24
+    tmp2 = (subframe[3] & 0x3FFFFFC0) >> 6;                           // bits 1-24
     tmp3 = (tmp1 << 24) | tmp2;
-    eph_.omega0 = navtools::TwosComp(tmp3, 32) * GPS_PI<T> * PowerOfTwo<-31, T>();
+    this->omega0 = navtools::TwosComp(tmp3, 32) * GPS_PI<T> * PowerOfTwo<-31, T>();
 
     // Word 5 and 6
     tmp3 = (subframe[4] & 0x3FFFC000) >> 14;
-    eph_.cis = navtools::TwosComp(tmp3, 16) * PowerOfTwo<-29, T>();  // bits 1-16
-    tmp1 = (subframe[4] & 0x00003FC0) >> 6;                          // bits 17-24
-    tmp2 = (subframe[5] & 0x3FFFFFC0) >> 6;                          // bits 1-24
+    this->cis = navtools::TwosComp(tmp3, 16) * PowerOfTwo<-29, T>();  // bits 1-16
+    tmp1 = (subframe[4] & 0x00003FC0) >> 6;                           // bits 17-24
+    tmp2 = (subframe[5] & 0x3FFFFFC0) >> 6;                           // bits 1-24
     tmp3 = (tmp1 << 24) | tmp2;
-    eph_.i0 = navtools::TwosComp(tmp3, 32) * GPS_PI<T> * PowerOfTwo<-31, T>();
+    this->i0 = navtools::TwosComp(tmp3, 32) * GPS_PI<T> * PowerOfTwo<-31, T>();
 
     // word 7 and 8
     tmp3 = (subframe[6] & 0x3FFFC000) >> 14;
-    eph_.crc = navtools::TwosComp(tmp3, 16) * PowerOfTwo<-5, T>();  // bits 1-16
-    tmp1 = (subframe[6] & 0x00003FC0) >> 6;                         // bits 17-24
-    tmp2 = (subframe[7] & 0x3FFFFFC0) >> 6;                         // bits 1-24
+    this->crc = navtools::TwosComp(tmp3, 16) * PowerOfTwo<-5, T>();  // bits 1-16
+    tmp1 = (subframe[6] & 0x00003FC0) >> 6;                          // bits 17-24
+    tmp2 = (subframe[7] & 0x3FFFFFC0) >> 6;                          // bits 1-24
     tmp3 = (tmp1 << 24) | tmp2;
-    eph_.omega = navtools::TwosComp(tmp3, 32) * GPS_PI<T> * PowerOfTwo<-31, T>();
+    this->omega = navtools::TwosComp(tmp3, 32) * GPS_PI<T> * PowerOfTwo<-31, T>();
 
     // Word 9
     tmp3 = (subframe[8] & 0x3FFFFFC0) >> 6;
-    eph_.omegaDot = navtools::TwosComp(tmp3, 24) * GPS_PI<T> * PowerOfTwo<-43, T>();  // bits 1-24
+    this->omegaDot = navtools::TwosComp(tmp3, 24) * GPS_PI<T> * PowerOfTwo<-43, T>();  // bits 1-24
 
     // Word 10
-    eph_.iode = static_cast<T>((subframe[9] & 0x3FC00000) >> 22);  // bits 1-8
+    this->iode = static_cast<T>((subframe[9] & 0x3FC00000) >> 22);  // bits 1-8
     tmp3 = (subframe[9] & 0x003FFF00) >> 8;
-    eph_.iDot = navtools::TwosComp(tmp3, 14) * GPS_PI<T> * PowerOfTwo<-43, T>();  // bits 9-22
+    this->iDot = navtools::TwosComp(tmp3, 14) * GPS_PI<T> * PowerOfTwo<-43, T>();  // bits 9-22
   };
 
   /**
@@ -387,7 +388,11 @@ class GpsLnav {
    * @returns Current set of ephemerides
    */
   KeplerElements<T> GetEphemerides() {
-    return eph_;
+    return KeplerElements<T>{this->iode,   this->iodc, this->toe,    this->toc,   this->tgd,
+                             this->af2,    this->af1,  this->af0,    this->e,     this->sqrtA,
+                             this->deltan, this->m0,   this->omega0, this->omega, this->omegaDot,
+                             this->i0,     this->iDot, this->cuc,    this->cus,   this->cic,
+                             this->cis,    this->crc,  this->crs,    this->ura,   this->health};
   };
 
   /**
@@ -395,7 +400,8 @@ class GpsLnav {
    * @returns Current set of ephemerides
    */
   KlobucharElements<T> GetKlobuchar() {
-    return atm_;
+    return KlobucharElements<T>{
+        this->a0, this->a1, this->a2, this->a3, this->b0, this->b1, this->b2, this->b3};
   };
 
   /**
@@ -418,7 +424,9 @@ class GpsLnav {
    * *=== AreEphemeridesParsed ===*
    * @returns True|False based on if subframe 1,2 and 3 have been parsed
    */
-  bool AreEphemeridesParsed();
+  bool AreEphemeridesParsed() {
+    return sub1_parsed_ & sub2_parsed_ & sub3_parsed_;
+  };
 
  private:
   bool preamble_sync_{false};
@@ -433,8 +441,6 @@ class GpsLnav {
   std::vector<uint16_t> preamble_idx_;
   uint16_t week_;
   T ToW_;
-  KeplerElements<T> eph_;
-  KlobucharElements<T> atm_;
   // clang-format off
   inline static constexpr uint8_t GPS_D25[14] = {2,3,4,6,7,11,12,13,14,15,18,19,21,24};   // [1,2,3,5,6,10,11,12,13,14,17,18,20,23]
   inline static constexpr uint8_t GPS_D26[14] = {3,4,5,7,8,12,13,14,15,16,19,20,22,25};   // [2,3,4,6,7,11,12,13,14,15,18,19,21,24]

@@ -29,7 +29,7 @@ namespace satutils {
 /**
  * @brief Struct containing polynomial coefficients for ionospheric corrections
  */
-template <typename N>
+template <typename N = double>
 struct KlobucharElements {
   N a0{std::nan("1")};
   N a1{std::nan("1")};
@@ -43,7 +43,7 @@ struct KlobucharElements {
 
 //! ------------------------------------------------------------------------------------------------
 
-template <typename N>
+template <typename N = double>
 class IonoModel : public KlobucharElements<N> {
  public:
   /**
@@ -118,9 +118,18 @@ class IonoModel : public KlobucharElements<N> {
 
     Iono *= navtools::LIGHT_SPEED<N>;
   };
+
+  /**
+   * *=== GetKlobuchar ===*
+   * @returns Current set of ephemerides
+   */
+  KlobucharElements<N> GetKlobuchar() {
+    return KlobucharElements<N>{
+        this->a0, this->a1, this->a2, this->a3, this->b0, this->b1, this->b2, this->b3};
+  };
 };
 
-template <typename N>
+template <typename N = double>
 class TropoModel {
  public:
   /**
