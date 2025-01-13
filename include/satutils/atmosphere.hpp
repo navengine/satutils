@@ -1,317 +1,273 @@
 /**
-|======================================== atmosphere.hpp ==========================================|
-|                                                                                                  |
-|   @file     include/satutils/atmosphere.hpp                                                      |
-|   @brief    GNSS atmospheric corrections.                                                        |
-|   @date     July 2024                                                                            |
-|                                                                                                  |
-|==================================================================================================|
-*/
+ * *atmosphere.hpp*
+ *
+ * =======  ========================================================================================
+ * @file    satutils/atmosphere.hpp
+ * @brief   GNSS atmospheric corrections.
+ * @date    January 2025
+ * @author  Daniel Sturdivant <Auburn University GAVLAB>
+ * @author  Blake Baker <Auburn University GAVLAB>
+ * @ref     1. "IS-GPS-200N", 2022
+ *          2. "Klobuchar Ionospheric Model" - Navipedia
+ *          3. "Tropospheric Delay" - Navipedia
+ *          4. "Mapping of Niell" - Navipedia
+ *          5. "Principles of GNSS, Inertial, and Multisensor Integrated Navigation Systems", 2nd
+ *              Edition, 2013 - Groves
+ * =======  ========================================================================================
+ */
 
 #ifndef SATUTILS_ATMOSPHERE_HPP
 #define SATUTILS_ATMOSPHERE_HPP
 
-#include <initializer_list>
-#include <iostream>
 #include <cmath>
-#include <array>
+#include <navtools/constants.hpp>
 
-#include <navtools/math.hpp>
-#include <satutils/common.hpp>
-#include <satutils/constants.hpp>
+#include "satutils/gnss-constants.hpp"
 
 namespace satutils {
 
-//* ===== Broadcast Ionosphere Corrections ===================================================== *//
-
-class Ionosphere {
-public:
-  virtual ~Ionosphere() = default;
-  virtual void print() const = 0;
+/**
+ * @brief Struct containing polynomial coefficients for ionospheric corrections
+ */
+template <typename N>
+struct KlobucharElements {
+  N a0{std::nan("1")};
+  N a1{std::nan("1")};
+  N a2{std::nan("1")};
+  N a3{std::nan("1")};
+  N b0{std::nan("1")};
+  N b1{std::nan("1")};
+  N b2{std::nan("1")};
+  N b3{std::nan("1")};
 };
 
-template <typename Float>
-struct Klobuchar : public Ionosphere
-{
-public:
-  Klobuchar() = default;
-  // ~Klobuchar() = default;
+//! ------------------------------------------------------------------------------------------------
 
-  Float alpha_0{0.0};  // polynomial coefficients for ionospheric correction
-  Float alpha_1{0.0};
-  Float alpha_2{0.0};
-  Float alpha_3{0.0};
-  Float beta_0{0.0};
-  Float beta_1{0.0};
-  Float beta_2{0.0};
-  Float beta_3{0.0};
+template <typename N>
+class IonoModel : public KlobucharElements<N> {
+ public:
+  /**
+   * *=== CalcIonoDelay ===*
+   * @brief Estimates the ionospheric delay based on the Klobuchar model
+   * @param Iono  ionospheric time delay [m]
+   * @param tow   GPS time of week in seconds [s]
+   * @param lat   geodetic latitude [rad]
+   * @param lon   geodetic longitude [rad]
+   * @param az    azimuth angle to satellite [rad]
+   * @param el    elevation angle to satellite [rad]
+   */
+  void CalcIonoDelay(N &Iono, const N &tow, const N &lat, const N &lon, const N &az, const N &el) {
+    // elevation: radians to semi-circles
+    N E = el / navtools::PI<N>;
 
-  //! === PRINT ===
-  void print() const {
-      std::cout << "--- Klobuchar Parameters ---" << '\n'
-                << "alpha_0:  " << alpha_0 << '\n'
-                << "alpha_1:  " << alpha_1 << '\n'
-                << "alpha_2:  " << alpha_2 << '\n'
-                << "alpha_3:  " << alpha_3 << '\n'
-                << "beta_0:   " << beta_0 << '\n'
-                << "beta_1:   " << beta_1 << '\n'
-                << "beta_2:   " << beta_2 << '\n'
-                << "beta_3:   " << beta_3 << '\n'
-                << "----------------------------" << '\n';
-  }
+    // 9. compute the slant factor
+    N F = 1.0 + 16.0 * std::pow(0.53 - E, 3);
 
-  // lat_semi - geodetic latitude (semicircles)
-  // long_semi - geodetic longitude (semicircles)
-  // az_rad - azimuth (radians)
-  // el_semi - elevation angle (semicircles)
-  Float GpsL1DelayImpl(const Float& gps_tow,
-                       const Float& lat_semi, const Float& long_semi,
-                       const Float& az_rad, const Float& el_semi) const
-  {
-    Float psi = ( static_cast<Float>(0.0137) / (el_semi + static_cast<Float>(0.11)) ) - static_cast<Float>(0.022); // semicircles
-    Float phi_i = lat_semi + psi * std::cos(az_rad); // semicircles
+    if (std::abs(F) <= 1.57) {
+      // radians to semi-circles
+      N phiu = lat / navtools::PI<N>;
+      N lamu = lon / navtools::PI<N>;
+      // N A = az / navtools::PI<N>;
 
-    constexpr Float phi_thresh = static_cast<Float>(0.416);
-    if (phi_i > phi_thresh)
-      phi_i = phi_thresh;
-    else if (phi_i < -phi_thresh)
-      phi_i = -phi_thresh;
+      // 1. calculate earth-centered angle
+      N psi = 0.0137 / (E + 0.11) - 0.022;
 
-    Float lambda = long_semi
-                 + ( (psi * std::sin(az_rad)) / std::cos(phi_i * PI<Float>) ); // semicircles
-    Float phi_m = phi_i + static_cast<Float>(0.064)
-                * std::cos( PI<Float> * (lambda - static_cast<Float>(1.617)) ); // semicircles
+      // 2. calculate latitude of ionospheric pierce point
+      N phiI = phiu + psi * std::cos(az);
+      if (phiI > 0.416) {
+        phiI = 0.416;
+      } else if (phiI < -0.416) {
+        phiI = -0.416;
+      }
 
-    Float t = (static_cast<Float>(43200) * lambda) + gps_tow;
-    CircMod(t, static_cast<Float>(86400));
+      // 3. compute longitude of ionospheric pierce point
+      N lamI = lamu + psi * std::sin(az) / std::cos(phiI);
 
-    Float amplitude = alpha_0 + phi_m * (alpha_1 + phi_m * (alpha_2 + phi_m * alpha_3));
-    if (amplitude < static_cast<Float>(0)) amplitude = static_cast<Float>(0);
+      // 4. find geomagnetic latitude of ionospheric pierce point
+      N phim = phiI + 0.064 * std::cos(lamI - 1.617);
+      N phim2 = phim * phim;
+      N phim3 = phim2 * phim;
 
-    Float period = beta_0 + phi_m * (beta_1 + phi_m * (beta_2 + phi_m * beta_3));
-    if (period < static_cast<Float>(72000)) period = static_cast<Float>(72000);
+      // 5. find local time at the ionospheric pierce point
+      N t = 43200.0 * lamI + std::fmod(tow, S_PER_DAY<N>);
+      if (t < 0.0) {
+        t += S_PER_DAY<N>;
+      } else if (t > S_PER_DAY<N>) {
+        t -= S_PER_DAY<N>;
+      }
 
-    Float X_I = TWO_PI<Float> * (t - static_cast<Float>(50400)) / period;
-    Float slant_factor = static_cast<Float>(1) + static_cast<Float>(16) * std::pow(0.53 - el_semi,3.0);
+      // 6. compute the amplitude of ionospheric delay
+      N AI = this->a0 + this->a1 * phim + this->a2 * phim2 + this->a3 * phim3;
+      if (AI < 0.0) AI = 0.0;
 
-    if (X_I >= static_cast<Float>(1.57)) {
-      return static_cast<Float>(5.0e-9) * slant_factor;
+      // 7. compute the period of ionospheric delay
+      N PI = this->b0 + this->b1 * phim + this->b2 * phim2 + this->b3 * phim3;
+      if (PI < 72000.0) PI = 72000.0;
+
+      // 8. compute the phase of ionospheric delay
+      N XI = navtools::TWO_PI<N> * (t - 50400.0) / PI;
+      N XI2 = XI * XI;
+
+      // 10. compute the ionospheric time delay
+      Iono = (5e-9 + AI * (1.0 - XI2 / 2.0 + XI2 * XI2 / 24.0)) * F;
+
+    } else {
+      // 10. compute the ionospheric time delay
+      Iono = 5e-9 * F;
     }
-    else {
-      return slant_factor * (static_cast<Float>(5.0e-9) + (amplitude * (
-             static_cast<Float>(1) - (static_cast<Float>(0.5) * std::pow(X_I,2.0)) + (std::pow(X_I,4.0) / static_cast<Float>(24.0))
-        )));
-    }
-  }
 
-  Float GpsL1Delay(const Float& gps_tow,
-                   // const Eigen::Ref<const Vec3<Float>>& rx_ecef_pos,
-                   // const Eigen::Ref<const Vec3<Float>>& tx_ecef_pos)
-                   const Vec3<Float>& rx_ecef_pos,
-                   const Vec3<Float>& tx_ecef_pos) const
-  {
-    Vec3<Float> rx_lla = ecef2lla(rx_ecef_pos);
-    Vec3<Float> tx_aer = ecef2aer(rx_ecef_pos, tx_ecef_pos);
-    return GpsL1DelayImpl(gps_tow, (rx_lla(0) / PI<Float>), (rx_lla(1) / PI<Float>), tx_aer(0), (tx_aer(1) / PI<Float>));
-  }
-  
-  Float Delay(const Float& gps_tow,
-                   // const Eigen::Ref<const Vec3<Float>>& rx_ecef_pos,
-                   // const Eigen::Ref<const Vec3<Float>>& tx_ecef_pos,
-                   const Vec3<Float>& rx_ecef_pos,
-                   const Vec3<Float>& tx_ecef_pos,
-                   const Float center_frequency) const
-  {
-    return std::pow(GPS_L1_FREQUENCY<Float> / center_frequency, 2.0)
-           * GpsL1Delay(gps_tow, rx_ecef_pos, tx_ecef_pos);
-  }
+    Iono *= navtools::LIGHT_SPEED<N>;
+  };
 };
 
-template<typename Float>
-class TroposphericParameter
-{
-private:
-  const Float (&values_)[5][2];
-  static constexpr std::array<Float,5> lats_ = {
-    deg2rad<Float>(15.0),
-    deg2rad<Float>(30.0),
-    deg2rad<Float>(45.0),
-    deg2rad<Float>(60.0),
-    deg2rad<Float>(75.0)
+template <typename N>
+class TropoModel {
+ public:
+  /**
+   * *=== CalcTropoDelay ===*
+   * @brief Estimates the tropospheric delay based on the Klobuchar model
+   * @param Tropo tropospheric time delay [m]
+   * @param DoY   current day of the year (Jan 1 = 0, Dec 31  = 365)
+   * @param lat   geodetic latitude [rad]
+   * @param h     geodetic altitude [m]
+   * @param el    elevation angle to satellite [rad]
+   */
+  void CalcTropoDelay(N &Tropo, const N &DoY, const N &lat, const N &h, const N &el) {
+    // 1. Interpolate parameters
+    N mag_lat_deg = navtools::RAD2DEG<N> * std::abs(lat);
+    Eigen::Array<N, 1, 5> avg;
+    Eigen::Array<N, 1, 5> delta;
+    Eigen::Array<N, 1, 12> niell;
+    N dx;
+    if (mag_lat_deg < static_cast<N>(15)) {
+      avg = ParamAvg.row(0);
+      delta = SeasonalVar.row(0);
+      niell = MappingOfNiell.row(0);
+
+    } else if (mag_lat_deg < static_cast<N>(30)) {
+      dx = mag_lat_deg - static_cast<N>(15);
+      avg = interp<5>(ParamAvg.row(0), ParamAvg.row(1), dx);
+      delta = interp<5>(SeasonalVar.row(0), SeasonalVar.row(1), dx);
+      niell = interp<12>(MappingOfNiell.row(0), MappingOfNiell.row(1), dx);
+
+    } else if (mag_lat_deg < static_cast<N>(45)) {
+      dx = mag_lat_deg - static_cast<N>(30);
+      avg = interp<5>(ParamAvg.row(1), ParamAvg.row(2), dx);
+      delta = interp<5>(SeasonalVar.row(1), SeasonalVar.row(2), dx);
+      niell = interp<12>(MappingOfNiell.row(1), MappingOfNiell.row(2), dx);
+
+    } else if (mag_lat_deg < static_cast<N>(60)) {
+      dx = mag_lat_deg - static_cast<N>(45);
+      avg = interp<5>(ParamAvg.row(2), ParamAvg.row(3), dx);
+      delta = interp<5>(SeasonalVar.row(2), SeasonalVar.row(3), dx);
+      niell = interp<12>(MappingOfNiell.row(2), MappingOfNiell.row(3), dx);
+
+    } else if (mag_lat_deg < static_cast<N>(75)) {
+      dx = mag_lat_deg - static_cast<N>(60);
+      avg = interp<5>(ParamAvg.row(3), ParamAvg.row(4), dx);
+      delta = interp<5>(SeasonalVar.row(3), SeasonalVar.row(4), dx);
+      niell = interp<12>(MappingOfNiell.row(3), MappingOfNiell.row(4), dx);
+
+    } else {
+      avg = ParamAvg.row(4);
+      delta = SeasonalVar.row(4);
+      niell = MappingOfNiell.row(4);
+    }
+
+    // 2. calculate parameter scale factor
+    N Dmin = (lat >= static_cast<N>(0.0)) ? static_cast<N>(28.0) : static_cast<N>(211.0);
+    N sf = std::cos(navtools::TWO_PI<N> * (DoY - Dmin) / static_cast<N>(365.25));
+
+    // 3. calculate each parameter
+    N P = avg(0) - delta(0) * sf;
+    N T = avg(1) - delta(1) * sf;
+    N e = avg(2) - delta(2) * sf;
+    N B = avg(3) - delta(3) * sf;
+    N l = avg(4) - delta(4) * sf + 1.0;
+
+    // 4. calculate zero altitude vertical delay terms
+    N T0dry = 1e-6 * k1 * Rd * P / gm;
+    N T0wet = 1e-6 * k2 * Rd / (l * gm - B * Rd) * (e / T);
+
+    // 5. calculate vertical delay terms
+    N base = 1.0 - (B * h / T);
+    N power = navtools::GRAVITY<N> / (Rd * B);
+    N Tdry = std::pow(base, power) * T0dry;
+    N Twet = std::pow(base, (l * power) - 1.0) * T0wet;
+
+    // 6. calculate obliquity factor
+    N sinE = std::sin(el);
+    // N M = 1.001 / std::sqrt(0.002001 + sinE * sinE);
+    N ad = niell(0) - niell(3) * sf;
+    N bd = niell(1) - niell(4) * sf;
+    N cd = niell(2) - niell(5) * sf;
+    N Mdry = niellmap(sinE, ad, bd, cd) +
+             (1 / sinE - niellmap(sinE, niell(6), niell(7), niell(8))) * 1e-3 * h;
+    N Mwet = niellmap(sinE, niell(9), niell(10), niell(11));
+
+    // 7. calculate tropospheric error
+    // Tropo = (Tdry + Twet) * M;
+    Tropo = Tdry * Mdry + Twet * Mwet;
   };
 
-  Float CalcParam(const Float& param_0, const Float& del_param, const Float& D, bool is_north) const
-  {
-    Float D_min = is_north ? static_cast<Float>(28) : static_cast<Float>(211);
-    return param_0 - del_param * std::cos(TWO_PI<Float> * (D - D_min) / static_cast<Float>(365.25));
+ protected:
+  /**
+   * @brief constant parameters
+   */
+  inline static constexpr N k1 = 77.604;    // K/mbar
+  inline static constexpr N k2 = 382000.0;  // K^2/mbar
+  inline static constexpr N Rd = 287.054;   // J/Kg/K
+  inline static constexpr N gm = 9.784;     // m/s^2
+  inline static const Eigen::Array<N, 5, 5> ParamAvg{
+      // clang-format off
+      // P0       T0      e0     B0      l0
+      {1013.25, 299.65, 26.31, 6.30e-3, 2.77}, 
+      {1017.25, 294.15, 21.79, 6.05e-3, 3.15},
+      {1015.75, 283.15, 11.66, 5.58e-3, 2.57}, 
+      {1011.75, 272.15,  6.78, 5.39e-3, 1.81}, 
+      {1013.00, 263.65,  4.11, 4.53e-3, 1.55},
+      // clang-format on
+  };
+  inline static const Eigen::Array<N, 5, 5> SeasonalVar{
+      // clang-format off
+      // dP    dT    de      dB     dl
+      { 0.00,  0.0, 0.00, 0.00   , 0.00},
+      {-3.75,  7.0, 8.85, 0.25e-3, 0.33},
+      {-2.25, 11.0, 7.24, 0.32e-3, 0.46},
+      {-1.75, 15.0, 5.36, 0.81e-3, 0.74},
+      {-0.50, 14.5, 3.39, 0.62e-3, 0.30},
+      // clang-format on
+  };
+  inline static const Eigen::Array<N, 5, 12> MappingOfNiell{
+      // clang-format off
+      // 
+      {1.2769934e-3, 2.9153695e-3, 62.610505e-3, 0.0         , 0.0         , 0.0         , 2.53e-5, 5.49e-3, 1.14e-3, 5.8021897e-4, 1.4275268e-3, 4.3472961e-2},
+      {1.2683230e-3, 2.9152299e-3, 62.837393e-3, 1.2709626e-5, 2.1414949e-5, 9.0128400e-5, 2.53e-5, 5.49e-3, 1.14e-3, 5.6794847e-4, 1.5138625e-3, 4.6729510e-2},
+      {1.2465397e-3, 2.9288445e-3, 63.721774e-3, 2.6523662e-5, 3.0160779e-5, 4.3497037e-5, 2.53e-5, 5.49e-3, 1.14e-3, 5.8118019e-4, 1.4572752e-3, 4.3908931e-2},
+      {1.2196049e-3, 2.9022565e-3, 63.824265e-3, 3.4000452e-5, 7.2562722e-5, 84.795348e-5, 2.53e-5, 5.49e-3, 1.14e-3, 5.9727542e-4, 1.5007428e-3, 4.4626982e-2},
+      {1.2045996e-3, 2.9024912e-3, 64.258455e-3, 4.1202191e-5, 11.723375e-5, 170.37206e-5, 2.53e-5, 5.49e-3, 1.14e-3, 6.1641692e-4, 1.7599082e-3, 5.4736038e-2},
+      // clang-format on
+  };
+
+  /**
+   * *=== interp ===*
+   * @brief Linear interpolation
+   */
+  template <int S>
+  inline constexpr Eigen::Array<N, 1, S> interp(
+      const Eigen::Array<N, 1, S> &y0, const Eigen::Array<N, 1, S> &y1, const N &dx) {
+    return y0 + dx * (y1 - y0) / static_cast<N>(15);
   }
 
-  Float Interp(const std::size_t& i1, const std::size_t& i2, const Float& lat_mag) const
-  {
-    Float t = (lat_mag - lats_[i1]) / (lats_[i1+1] - lats_[i1]);
-    return values_[i1][i2] + (values_[i1+1][i2] - values_[i1][i2]) * t;
-  }
-
-public:
-  constexpr TroposphericParameter(const Float (&list)[5][2])
-    : values_{list}
-  {}
-
-  Float operator()(const Float& latitude, const Float& day_of_year) const
-  {
-    bool is_north = (latitude >= static_cast<Float>(0));
-    Float lat_mag = is_north ? latitude : -latitude;
-    Float D_min = is_north ? static_cast<Float>(28) : static_cast<Float>(211);
-    if (lat_mag <= lats_[0]) {
-      return CalcParam(values_[0][0], values_[0][1], day_of_year, D_min);
-    }
-    else if (lat_mag < lats_[1]) {
-      return CalcParam(Interp(0,0,lat_mag), Interp(0,1,lat_mag), day_of_year, is_north);
-    }
-    else if (lat_mag < lats_[2]) {
-      return CalcParam(Interp(1,0,lat_mag), Interp(1,1,lat_mag), day_of_year, is_north);
-    }
-    else if (lat_mag < lats_[3]) {
-      return CalcParam(Interp(2,0,lat_mag), Interp(2,1,lat_mag), day_of_year, is_north);
-    }
-    else if (lat_mag < lats_[4]) {
-      return CalcParam(Interp(3,0,lat_mag), Interp(3,1,lat_mag), day_of_year, is_north);
-    }
-    else {
-      return CalcParam(values_[4][0], values_[4][1], day_of_year, is_north);
-    }
-  }
-
-  Float operator()(Float& p0, const Float& latitude, const Float& day_of_year) const
-  {
-    bool is_north = (latitude >= static_cast<Float>(0));
-    Float lat_mag = is_north ? latitude : -latitude;
-    if (lat_mag <= lats_[0]) {
-      p0 = values_[0][0];
-      return CalcParam(p0, values_[0][1], day_of_year, is_north);
-    }
-    else if (lat_mag < lats_[1]) {
-      p0 = Interp(0,0,lat_mag);
-      return CalcParam(p0, Interp(0,1,lat_mag), day_of_year, is_north);
-    }
-    else if (lat_mag < lats_[2]) {
-      p0 = Interp(1,0,lat_mag);
-      return CalcParam(p0, Interp(1,1,lat_mag), day_of_year, is_north);
-    }
-    else if (lat_mag < lats_[3]) {
-      p0 = Interp(2,0,lat_mag);
-      return CalcParam(p0, Interp(2,1,lat_mag), day_of_year, is_north);
-    }
-    else if (lat_mag < lats_[4]) {
-      p0 = Interp(3,0,lat_mag);
-      return CalcParam(p0, Interp(3,1,lat_mag), day_of_year, is_north);
-    }
-    else {
-      p0 = values_[4][0];
-      return CalcParam(p0, values_[4][1], day_of_year, is_north);
-    }
-  }
-
-  Float Evaluate(const Float latitude, const Float day_of_year) const
-  {
-    return this->operator()(latitude, day_of_year);
-  }
+  /**
+   * *=== niellmap ===
+   * @brief parameter map for mapping of niell
+   */
+  inline constexpr N niellmap(const N &sinE, const N &a, const N &b, const N &c) {
+    return (1.0 + a / (1.0 + b / (1.0 + c))) / (sinE + a / (sinE + b / (sinE + c)));
+  };
 };
-
-template<typename Float>
-static constexpr Float tropospheric_pressures[5][2] = {
-    {1013.25, 0.0},
-    {1017.25, -3.75},
-    {1015.75, -2.25},
-    {1011.75, -1.75},
-    {1013.00, -0.5}
-  };
-
-template<typename Float>
-static constexpr Float tropospheric_temperatures[5][2] = {
-    {299.65, 0.0},
-    {294.15, 7.0},
-    {283.15, 11.0},
-    {272.15, 15.0},
-    {263.65, 14.5}
-  };
-
-template<typename Float>
-static constexpr Float tropospheric_vapor_pressures[5][2] = {
-    {26.31, 0.0},
-    {21.79, 8.85},
-    {11.66, 7.24},
-    {6.78, 5.36},
-    {4.11, 3.39}
-  };
-
-template<typename Float>
-static constexpr Float tropospheric_temp_lapse_rates[5][2] = {
-    {6.3e-3, 0.0},
-    {6.05e-3, 0.25e-3},
-    {5.58e-3, 0.32e-3},
-    {5.39e-3, 0.81e-3},
-    {4.53e-3, 0.62e-3}
-  };
-
-template<typename Float>
-static constexpr Float tropospheric_vapor_lapse_rates[5][2] = {
-    {2.77, 0.0},
-    {3.15, 0.33},
-    {2.57, 0.46},
-    {1.81, 0.74},
-    {1.55, 0.3}
-  };
-
-template<typename Float>
-static constexpr TroposphericParameter<Float> TropPressure(tropospheric_pressures<Float>);
-
-template<typename Float>
-static constexpr TroposphericParameter<Float> TropTemperature(tropospheric_temperatures<Float>);
-
-template<typename Float>
-static constexpr TroposphericParameter<Float> TropVaporPressure(tropospheric_vapor_pressures<Float>);
-
-template<typename Float>
-static constexpr TroposphericParameter<Float> TropTempLapseRate(tropospheric_temp_lapse_rates<Float>);
-
-template<typename Float>
-static constexpr TroposphericParameter<Float> TropVaporLapseRate(tropospheric_vapor_lapse_rates<Float>);
-
-// day_of_year is the number of days into the year (from January 1)
-// height is meters above mean sea level
-// output is in meters
-// valid for frequencies up to about 15 GHz
-// Based on the UNB3 model introduced in (Collins, J., 1999. Assessment and Development of a Tropospheric Delay Model for Aircraft Users of the Global Positioning System)
-// Source: https://gssc.esa.int/navipedia/index.php/Tropospheric_Delay
-template<typename Float>
-Float TroposphericDelay(const Float& lat_rad, const Float& height, const Float& el_rad, const Float& day_of_year)
-{
-  constexpr Float k1 = static_cast<Float>(77.604);
-  constexpr Float k2 = static_cast<Float>(382000);
-  constexpr Float Rd = static_cast<Float>(287.054);
-  constexpr Float gm = static_cast<Float>(9.784);
-  constexpr Float g = static_cast<Float>(9.80665);
-
-  Float T0;
-  Float T = TropTemperature<Float>(T0, lat_rad, day_of_year);
-  Float beta = TropTempLapseRate<Float>(lat_rad, day_of_year);
-  if (height > (T0 / beta))
-    return static_cast<Float>(0);
-
-  Float sin_e = std::sin(el_rad);
-  Float M = 1.001 / std::sqrt(0.002001 + (sin_e * sin_e));
-  Float P = TropPressure<Float>(lat_rad, day_of_year);
-  Float e = TropVaporPressure<Float>(lat_rad, day_of_year);
-  Float lambda_term = TropVaporLapseRate<Float>(lat_rad, day_of_year) + static_cast<Float>(1);
-
-  Float height_factor = static_cast<Float>(1) - ((beta * height) / T);
-  Float T_dry = ( (1.0e-6 * k1 * Rd * P) / gm )
-              * std::pow( height_factor, g / (Rd * beta) );
-  Float T_wet = ( (1.0e-6 * k2 * Rd) / ((lambda_term * gm) - (beta * Rd)) * (e / T) )
-              * std::pow( height_factor, ((lambda_term * g) / (Rd * beta)) - 1.0 );
-  return M * (T_dry + T_wet);
-}
 
 }  // namespace satutils
+
 #endif

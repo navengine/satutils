@@ -39,13 +39,14 @@ find_package(navtools REQUIRED)
 
 # --- Add Library Soruce Files ---
 set(SATUTILS_HDRS
-    include/satutils/common.hpp
     include/satutils/atmosphere.hpp
-    include/satutils/clock.hpp
     include/satutils/code-gen.hpp
-    include/satutils/constants.hpp
     include/satutils/ephemeris.hpp
-    include/satutils/parsers.hpp
+    include/satutils/gnss-constants.hpp
+    include/satutils/gps-lnav.hpp
+    include/satutils/rinex-parser.hpp
+    include/satutils/time.hpp
+    include/satutils/tle-parser.hpp
 )
 
 # --- Create the C++ Library ---
@@ -65,12 +66,18 @@ target_link_libraries(
 
 # --- Build Executables ---
 if (NOT DEFINED INSTALL_SATUTILS_EXAMPLES OR NOT INSTALL_SATUTILS_EXAMPLES)
-    message(STATUS "${BoldCyan}INSTALL_SATUTILS_EXAMPLES is false${Reset}")
+    # message(STATUS "${BoldCyan}INSTALL_SATUTILS_EXAMPLES is false${Reset}")
 else()
-    message(STATUS "${BoldCyan}INSTALL_SATUTILS_EXAMPLES is true${Reset}")
+    # message(STATUS "${BoldCyan}INSTALL_SATUTILS_EXAMPLES is true${Reset}")
 
-    add_executable(test_parser examples/test_parser.cpp)
-    target_link_libraries(test_parser PUBLIC ${PROJECT_NAME})
+    file(GLOB testfiles "${CMAKE_CURRENT_SOURCE_DIR}/examples/*.cpp")
+    foreach(file ${testfiles})
+        # message(${file})
+        get_filename_component(testname ${file} NAME_WE)
+        add_executable(${testname} ${file})
+        target_link_libraries( ${testname} PUBLIC ${PROJECT_NAME})
+    endforeach(file ${testfiles})
+    
 endif()
 
 # --- Make Library 'Findable' for other CMake Packages ---
