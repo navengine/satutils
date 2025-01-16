@@ -16,16 +16,14 @@
 #ifndef SATUTILS_CODE_GEN_HPP
 #define SATUTILS_CODE_GEN_HPP
 
-#include <cstdint>
-#include <cassert>
 #include <array>
-
+#include <cassert>
+#include <cstdint>
 #include <navtools/binary-ops.hpp>
-#include <navtools/constants.hpp>
 
 namespace satutils {
 
-void CodeGenCA(bool sequence[1023], uint8_t prn) {
+inline void CodeGenCA(bool sequence[1023], uint8_t prn) {
   assert(!((prn < 1) || (prn > 32)));
   prn -= 1;
 
@@ -86,8 +84,7 @@ void CodeGenCA(bool sequence[1023], uint8_t prn) {
   }
 };
 
-void CodeGenCA(std::array<bool,1023>& sequence, const uint8_t prn)
-{
+inline void CodeGenCA(std::array<bool, 1023>& sequence, const uint8_t prn) {
   CodeGenCA(sequence.data(), prn);
 }
 
