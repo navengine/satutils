@@ -381,8 +381,7 @@ class GpsLnav : public KeplerElements<T>, KlobucharElements<T> {
     this->sqrtA = static_cast<T>((tmp1 << 24) | tmp2) * PowerOfTwo<-19, T>();
 
     // Word 10
-    this->toe =
-        static_cast<T>((subframe[9] & 0x3FFFC000) >> 14) * PowerOfTwo<-4, T>();  // bits 1-16
+    this->toe = static_cast<T>((subframe[9] & 0x3FFFC000) >> 14) * PowerOfTwo<4, T>();  // bits 1-16
     // fit_interval_alert_flag = bool((subframe[9] & 0x00002000) >> 13);           // bit 17
   };
 
