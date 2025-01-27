@@ -222,8 +222,8 @@ class KeplerEphem : public KeplerElements<T> {
 
     // relativistic clock calculations (user time)
     T FESQA = navtools::F<T> * this->e * this->sqrtA;  // relativistic time factor
-    // clk(0) = dt_sv + (FESQA * SINE);
-    clk(0) = dt_sv - 2.0 * pos.dot(vel) / (navtools::LIGHT_SPEED<T> * navtools::LIGHT_SPEED<T>);
+    clk(0) = dt_sv + (FESQA * SINE);
+    // clk(0) = dt_sv - 2.0 * pos.dot(vel) / (navtools::LIGHT_SPEED<T> * navtools::LIGHT_SPEED<T>);
     clk(1) = this->af1 + (2.0 * this->af2 * dt) + (n_ * FESQA * COSE / DEN);
 
     if constexpr (calc_acc) {
