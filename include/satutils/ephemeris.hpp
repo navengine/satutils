@@ -92,7 +92,7 @@ class KeplerEphem : public KeplerElements<T> {
    * *=== SetEphem ===*
    * @brief set the ephemeris elements
    */
-  void SetEphem(const KeplerElements<T> &eph) {
+  void SetEphemerides(const KeplerElements<T> &eph) {
     this->iode = eph.iode;
     this->iodc = eph.iodc;
     this->toe = eph.toe;
@@ -284,12 +284,51 @@ template <typename T = double>
 class Sgp4Ephem : public Sgp4Elements<T> {
  public:
   /**
+   * *=== SetEphemerides ===*
+   * @brief set the ephemeris elements
+   */
+  void SetEphemerides(const Sgp4Elements<T> &eph) {
+    this->catalog_id = eph.catalog_id;
+    this->week = eph.week;
+    this->toe = eph.toe;
+    this->Bstar = eph.Bstar;
+    this->e0 = eph.e0;
+    this->omega0 = eph.omega0;
+    this->omega = eph.omega;
+    this->i0 = eph.i0;
+    this->n0 = eph.n0;
+    this->nDot = eph.nDot;
+    this->nDDot = eph.nDDot;
+    this->m0 = eph.m0;
+  };
+
+  /**
+   * *=== GetEphemerides ===*
+   * @returns Current set of ephemerides
+   */
+  Sgp4Elements<T> GetEphemerides() {
+    return Sgp4Elements<T>{
+        this->catalog_id,
+        this->week,
+        this->toe,
+        this->Bstar,
+        this->e0,
+        this->omega0,
+        this->omega,
+        this->i0,
+        this->n0,
+        this->nDot,
+        this->nDDot,
+        this->m0};
+  };
+
+  /**
    * *=== CalcNavStates ===
    * @brief Calculates satellite position, velocity, and acceleration using ephemeris
    * @param pos           Satellite position vector
    * @param vel           Satellite velocity vector
-   * @param transmit_time GPS system/transmitter time (TOW) of the satellite (accounting for transit
-   *                      time from satellite to receiver) [gps seconds]
+   * @param transmit_time GPS system/transmitter time (TOW) of the satellite (accounting for
+   * transit time from satellite to receiver) [gps seconds]
    * @return True|False based on success
    */
   void CalcNavStates(Eigen::Vector<T, 3> &pos, Eigen::Vector<T, 3> &vel, const T &transmit_time) {

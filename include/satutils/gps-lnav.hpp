@@ -34,21 +34,21 @@ class GpsLnav : public KeplerElements<T>, KlobucharElements<T> {
  public:
   GpsLnav<T>() = default;
   GpsLnav<T>(const KeplerElements<T> &eph) {
-    SetEphem(eph);
+    SetEphemerides(eph);
   };
   GpsLnav<T>(const KlobucharElements<T> &klob) {
     SetKlobuchar(klob);
   };
   GpsLnav<T>(const KeplerElements<T> &eph, const KlobucharElements<T> &klob) {
-    SetEphem(eph);
+    SetEphemerides(eph);
     SetKlobuchar(klob);
   };
 
   /**
-   * *=== SetEphem ===*
+   * *=== SetEphemerides ===*
    * @brief set the ephemeris elements
    */
-  void SetEphem(const KeplerElements<T> &eph) {
+  void SetEphemerides(const KeplerElements<T> &eph) {
     this->iode = eph.iode;
     this->iodc = eph.iodc;
     this->toe = eph.toe;

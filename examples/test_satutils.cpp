@@ -16,7 +16,6 @@ int main() {
   double lon = -1.5;
   double ToW = 412600;
 
-  double err1, err2;
   satutils::IonoModel<double> iono;
   iono.a0 = 2.6768e-08;
   iono.a1 = 4.4914e-09;
@@ -26,11 +25,11 @@ int main() {
   iono.b1 = -1.1203e05;
   iono.b2 = -7.0416e05;
   iono.b3 = -6.4865e06;
-  iono.CalcIonoDelay(err1, ToW, lat, lon, az, el);
+  double err1 = iono.CalcIonoDelay(ToW, lat, lon, az, el);
   std::cout << "err1 = " << err1 << std::endl;
 
   satutils::TropoModel<double> trop;
-  trop.CalcTropoDelay(err2, DoY, lat, h, el);
+  double err2 = trop.CalcTropoDelay(DoY, lat, h, el);
   std::cout << "err2 = " << err2 << std::endl;
 
   return 0;

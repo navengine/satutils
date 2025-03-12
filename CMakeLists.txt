@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.15...3.27)
 project(satutils)
 
 string(ASCII 27 Esc)
@@ -20,19 +20,19 @@ set(BoldCyan    "${Esc}[1;36m")
 set(BoldWhite   "${Esc}[1;37m")
 
 # --- Version Control ---
-set(SATUTILS_MAJOR_VERSION 0)
+set(SATUTILS_MAJOR_VERSION 1)
 set(SATUTILS_MINOR_VERSION 0)
-set(SATUTILS_PATCH_VERSION 1)
+set(SATUTILS_PATCH_VERSION 0)
 set(PROJECT_VERSION ${SATUTILS_MAJOR_VERSION}.${SATUTILS_MINOR_VERSION}.${SATUTILS_PATCH_VERSION})
 message(STATUS "${BoldCyan}${PROJECT_NAME} version ${PROJECT_VERSION}${Reset}")
 
-# # --- Compiler Flags ---
-# set(CMAKE_CXX_STANDARD 20)
-# set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wunused -pedantic")
-# set(CMAKE_CXX_FLAGS_DEBUG "-g -W")
-# # set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Ofast -ffast-math -fomit-frame-pointer -fstrict-aliasing -flto -DNDEBUG -march=native")
-# set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Ofast -ffast-math")
+# --- Compiler Flags ---
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wunused -pedantic")
+set(CMAKE_CXX_FLAGS_DEBUG "-g -W")
+# set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Ofast -ffast-math -fomit-frame-pointer -fstrict-aliasing -flto -DNDEBUG -march=native")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Ofast -ffast-math")
 
 # --- Packages ---
 find_package(Eigen3 REQUIRED)
@@ -64,6 +64,7 @@ target_link_libraries(
     Eigen3::Eigen
     navtools
 )
+set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # --- Build Executables ---
 if (NOT DEFINED INSTALL_SATUTILS_EXAMPLES OR NOT INSTALL_SATUTILS_EXAMPLES)
@@ -119,3 +120,13 @@ install(
     FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
     DESTINATION lib/cmake/${PROJECT_NAME}
 )
+
+# --- Python ---
+if (NOT DEFINED INSTALL_SATUTILS_PYTHON OR INSTALL_SATUTILS_PYTHON)
+    find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+    find_package(pybind11 CONFIG REQUIRED)
+    python_add_library(_satutils_core MODULE src/satutils-python.cpp WITH_SOABI)
+    target_link_libraries(_satutils_core PRIVATE pybind11::headers ${PROJECT_NAME} navtools)
+    target_compile_definitions(_satutils_core PRIVATE VERSION_INFO=${PROJECT_VERSION})
+    install(TARGETS _satutils_core DESTINATION satutils)
+endif()

@@ -77,8 +77,7 @@ class IonoModel : public KlobucharElements<Tp> {
    * @param el    elevation angle to satellite [rad]
    * @param gamma frequency depending scaling factor
    */
-  void CalcIonoDelay(
-      Tp &Iono,
+  Tp CalcIonoDelay(
       const Tp &tow,
       const Tp &lat,
       const Tp &lon,
@@ -91,6 +90,7 @@ class IonoModel : public KlobucharElements<Tp> {
     // 9. compute the slant factor
     Tp F = 1.0 + 16.0 * std::pow(0.53 - E, 3);
 
+    Tp Iono;
     if (std::abs(F) <= 1.57) {
       // radians to semi-circles
       Tp phiu = lat / navtools::PI<Tp>;
@@ -145,6 +145,7 @@ class IonoModel : public KlobucharElements<Tp> {
     }
 
     Iono *= gamma;
+    return Iono;
   };
 
   /**
@@ -162,14 +163,14 @@ class TropoModel {
  public:
   /**
    * *=== CalcTropoDelay ===*
-   * @brief Estimates the tropospheric delay based on the Klobuchar model
+   * @brief Estimates the tropospheric delay based on dry and wet delays
    * @param Tropo tropospheric time delay [s]
    * @param DoY   current day of the year (Jan 1 = 0, Dec 31  = 365)
    * @param lat   geodetic latitude [rad]
    * @param h     geodetic altitude [m]
    * @param el    elevation angle to satellite [rad]
    */
-  void CalcTropoDelay(Tp &Tropo, const Tp &DoY, const Tp &lat, const Tp &h, const Tp &el) {
+  Tp CalcTropoDelay(const Tp &DoY, const Tp &lat, const Tp &h, const Tp &el) {
     // 1. Interpolate parameters
     Tp mag_lat_deg = navtools::RAD2DEG<Tp> * std::abs(lat);
     Eigen::Array<Tp, 1, 5> avg;
@@ -243,7 +244,7 @@ class TropoModel {
     // Tp Mwet = niellmap(sinE, niell(9), niell(10), niell(11));
 
     // 7. calculate tropospheric error
-    Tropo = (Tdry + Twet) * M / navtools::LIGHT_SPEED<>;
+    return (Tdry + Twet) * M / navtools::LIGHT_SPEED<>;
     // Tropo = Tdry * Mdry + Twet * Mwet;
   };
 
