@@ -67,10 +67,10 @@ target_link_libraries(
 set_target_properties(${PROJECT_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # --- Build Executables ---
-if (NOT DEFINED INSTALL_SATUTILS_EXAMPLES OR NOT INSTALL_SATUTILS_EXAMPLES)
-    # message(STATUS "${BoldCyan}INSTALL_SATUTILS_EXAMPLES is false${Reset}")
+if (NOT DEFINED INSTALL_SATUTILS_TESTS OR NOT INSTALL_SATUTILS_TESTS)
+    # message(STATUS "${BoldCyan}INSTALL_SATUTILS_TESTS is false${Reset}")
 else()
-    # message(STATUS "${BoldCyan}INSTALL_SATUTILS_EXAMPLES is true${Reset}")
+    # message(STATUS "${BoldCyan}INSTALL_SATUTILS_TESTS is true${Reset}")
 
     file(GLOB testfiles "${CMAKE_CURRENT_SOURCE_DIR}/examples/*.cpp")
     foreach(file ${testfiles})
@@ -122,7 +122,7 @@ install(
 )
 
 # --- Python ---
-if (NOT DEFINED INSTALL_SATUTILS_PYTHON OR INSTALL_SATUTILS_PYTHON)
+if (NOT DEFINED INSTALL_PYTHON OR INSTALL_PYTHON)
     find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
     find_package(pybind11 CONFIG REQUIRED)
     python_add_library(_satutils_core MODULE src/satutils-python.cpp WITH_SOABI)

@@ -85,11 +85,11 @@ class KeplerEphem : public KeplerElements<T> {
  public:
   KeplerEphem<T>() = default;
   KeplerEphem<T>(const KeplerElements<T> &eph) {
-    SetEphem(eph);
+    SetEphemerides(eph);
   };
 
   /**
-   * *=== SetEphem ===*
+   * *=== SetEphemerides ===*
    * @brief set the ephemeris elements
    */
   void SetEphemerides(const KeplerElements<T> &eph) {

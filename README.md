@@ -17,8 +17,8 @@ sudo apt install python3-pybind11
 You must also make sure that `navtools` is available for the `satutils` package to find! This most likely implies building from a higher level cmake lists that merely include `navtools` and `satutils` as subdirectories.
 ```cmake
 cmake_minimum_required(VERSION 3.15...3.27)
-add_subdirectory(src/navtools)
-add_subdirectory(src/satutils)
+add_subdirectory(navtools)
+add_subdirectory(satutils)
 ```
 
 ## Building
@@ -33,11 +33,14 @@ To build the python project, first create a virtual environment, and then pip in
 python3 -m venv .venv
 . .venv/bin/activate
 pip install numpy
-pip install .
+pip install ./navtools/
+pip install ./satutils/
 ```
+NOTE: `navtools` must be pip installed prior to `satutils`!
 
 ## Python Linting
+This should already be applied, but in case it is not, you can simply do it as follows:
 ```sh
 pip install pybind11-stubgen
-pybind11-stubgen satutils -o src
+pybind11-stubgen satutils -o satutils/src
 ```
