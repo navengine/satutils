@@ -1,22 +1,23 @@
 """
 
-      SatUtils
-      ========
+SatUtils
+========
 
-      A set of utilities common for both the simulation and processing of signals from various 
-      satellite systems
+A set of utilities common for both the simulation and processing of signals from various
+satellite systems
 
-      Contains the following submodules:
+Contains the following submodules:
 
-        1. `atmosphere`
-        2. `codegen`
-        3. `ephemeris`
-        4. `gpslnav`
-        5. `rinexparser`
-        6. `time`
-        6. `tleparser`
-      
+  1. `atmosphere`
+  2. `codegen`
+  3. `ephemeris`
+  4. `gpslnav`
+  5. `rinexparser`
+  6. `time`
+  6. `tleparser`
+
 """
+
 from __future__ import annotations
 from satutils._satutils_core import atmosphere
 from satutils._satutils_core import codegen
@@ -26,7 +27,54 @@ from satutils._satutils_core import rinexparser
 from satutils._satutils_core import time
 from satutils._satutils_core import tleparser
 from . import _satutils_core
-__all__: list = ['__doc__', '__version__', 'GPS_PI', 'TWO_GPS_PI', 'GPS_L1_FREQUENCY', 'GPS_L2_FREQUENCY', 'GPS_L5_FREQUENCY', 'GPS_CA_CODE_RATE', 'GPS_L2_CODE_RATE', 'GPS_L5_CODE_RATE', 'GPS_CA_CODE_LENGTH', 'GPS_L2CM_CODE_LENGTH', 'GPS_L2CL_CODE_LENGTH', 'GPS_L5_CODE_LENGTH', 'LNAV_SUBFRAME_SIZE', 'LNAV_WORD_SIZE', 'LNAV_PREAMBLE_BITS', 'LNAV_INV_PREAMBLE_BITS', 'GALILEO_E5_FREQUENCY', 'GALILEO_E5A_FREQUENCY', 'GALILEO_E5B_FREQUENCY', 'GALILEO_E6_FREQUENCY', 'GALILEO_E6_CODE_RATE', 'GALILEO_E1_DATA_RATE', 'GALILEO_E5A_DATA_RATE', 'GALILEO_E5B_DATA_RATE', 'GALILEO_E6_DATA_RATE', 'GALILEO_E1_CODE_LENGTH', 'GALILEO_E5_CODE_LENGTH', 'GALILEO_E6_CODE_LENGTH', 'SGP_AE', 'SGP_XKMPER', 'SGP_S', 'SGP_QOMS2T', 'SGP_XKE', 'SGP_CK2', 'SGP_CK4', 'SGP_A3OVK2', 'atmosphere', 'codegen', 'ephemeris', 'gpslnav', 'rinexparser', 'time', 'tleparser']
+
+__all__: list = [
+    "__doc__",
+    "__version__",
+    "GPS_PI",
+    "TWO_GPS_PI",
+    "GPS_L1_FREQUENCY",
+    "GPS_L2_FREQUENCY",
+    "GPS_L5_FREQUENCY",
+    "GPS_CA_CODE_RATE",
+    "GPS_L2_CODE_RATE",
+    "GPS_L5_CODE_RATE",
+    "GPS_CA_CODE_LENGTH",
+    "GPS_L2CM_CODE_LENGTH",
+    "GPS_L2CL_CODE_LENGTH",
+    "GPS_L5_CODE_LENGTH",
+    "LNAV_SUBFRAME_SIZE",
+    "LNAV_WORD_SIZE",
+    "LNAV_PREAMBLE_BITS",
+    "LNAV_INV_PREAMBLE_BITS",
+    "GALILEO_E5_FREQUENCY",
+    "GALILEO_E5A_FREQUENCY",
+    "GALILEO_E5B_FREQUENCY",
+    "GALILEO_E6_FREQUENCY",
+    "GALILEO_E6_CODE_RATE",
+    "GALILEO_E1_DATA_RATE",
+    "GALILEO_E5A_DATA_RATE",
+    "GALILEO_E5B_DATA_RATE",
+    "GALILEO_E6_DATA_RATE",
+    "GALILEO_E1_CODE_LENGTH",
+    "GALILEO_E5_CODE_LENGTH",
+    "GALILEO_E6_CODE_LENGTH",
+    "SGP_AE",
+    "SGP_XKMPER",
+    "SGP_S",
+    "SGP_QOMS2T",
+    "SGP_XKE",
+    "SGP_CK2",
+    "SGP_CK4",
+    "SGP_A3OVK2",
+    "atmosphere",
+    "codegen",
+    "ephemeris",
+    "gpslnav",
+    "rinexparser",
+    "time",
+    "tleparser",
+]
 GALILEO_E1_CODE_LENGTH: int = 4092
 GALILEO_E1_DATA_RATE: float = 250.0
 GALILEO_E5A_DATA_RATE: float = 50.0
@@ -63,4 +111,4 @@ SGP_S: float = 1.01222928
 SGP_XKE: float = 0.07436691613317341
 SGP_XKMPER: float = 6378.135
 TWO_GPS_PI: float = 6.2831853071796
-__version__: str = '1.0.0'
+__version__: str = "1.0.0"

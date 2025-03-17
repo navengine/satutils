@@ -305,11 +305,12 @@ PYBIND11_MODULE(_satutils_core, h) {
       Satellite ephemeris structures.)pbdoc");
 
   // KeplerElements
-  py::class_<KeplerElements<double>>(atm, "KeplerElements")
+  py::class_<KeplerElements<double>>(eph, "KeplerElements")
       .def(py::init<>())
       .def_readwrite("iode", &KeplerElements<double>::iode)
       .def_readwrite("iodc", &KeplerElements<double>::iodc)
       .def_readwrite("toe", &KeplerElements<double>::toe)
+      .def_readwrite("toc", &KeplerElements<double>::toc)
       .def_readwrite("tgd", &KeplerElements<double>::tgd)
       .def_readwrite("af2", &KeplerElements<double>::af2)
       .def_readwrite("af1", &KeplerElements<double>::af1)
@@ -339,7 +340,7 @@ PYBIND11_MODULE(_satutils_core, h) {
                )pbdoc";
 
   // Sgp4Elements
-  py::class_<Sgp4Elements<double>>(atm, "Sgp4Elements")
+  py::class_<Sgp4Elements<double>>(eph, "Sgp4Elements")
       .def(py::init<>())
       .def_readwrite("catalog_id", &Sgp4Elements<double>::catalog_id)
       .def_readwrite("week", &Sgp4Elements<double>::week)
@@ -361,7 +362,7 @@ PYBIND11_MODULE(_satutils_core, h) {
                )pbdoc";
 
   // KeplerEphem
-  py::class_<KeplerEphem<double>>(atm, "KeplerEphem")
+  py::class_<KeplerEphem<double>>(eph, "KeplerEphem")
       .def(py::init<>())
       .def(py::init<const KeplerEphem<double> &>(), py::arg("eph"))
       .def(
@@ -451,7 +452,7 @@ PYBIND11_MODULE(_satutils_core, h) {
                )pbdoc";
 
   // Sgp4Ephem
-  py::class_<Sgp4Ephem<double>>(atm, "Sgp4Ephem")
+  py::class_<Sgp4Ephem<double>>(eph, "Sgp4Ephem")
       .def(py::init<>())
       .def(py::init<const Sgp4Ephem<double> &>(), py::arg("eph"))
       .def(
@@ -540,7 +541,7 @@ PYBIND11_MODULE(_satutils_core, h) {
       Implementation of GPS L1 C/A navigation message utils.)pbdoc");
 
   // GpsLnav
-  py::class_<GpsLnav<double>>(atm, "GpsLnav")
+  py::class_<GpsLnav<double>>(lnav, "GpsLnav")
       .def(py::init<>())
       .def(py::init<const KeplerElements<double> &>(), py::arg("eph"))
       .def(py::init<const KlobucharElements<double> &>(), py::arg("klob"))
