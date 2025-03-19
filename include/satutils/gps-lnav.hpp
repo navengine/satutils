@@ -203,8 +203,8 @@ class GpsLnav : public KeplerElements<T>, KlobucharElements<T> {
       // Step 1: Validate received data bits
       bool D29star, D30star;
       for (uint16_t i = 0; i < 10; i++) {
-        D29star = navtools::CheckBit<false>(subframe[i], 0);
-        D30star = navtools::CheckBit<false>(subframe[i], 1);
+        D29star = navtools::GetBit<false>(subframe[i], 0);
+        D30star = navtools::GetBit<false>(subframe[i], 1);
 
         // check bit polarity
         if (D30star) subframe[i] ^= 0x3FFFFFC0;
