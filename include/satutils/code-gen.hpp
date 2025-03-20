@@ -90,6 +90,147 @@ inline void CodeGenCA(std::array<bool, 1023>& sequence, const uint8_t prn)
   CodeGenCA(sequence.data(), prn);
 }
 
+inline void CodeGenL2CM(bool sequence[10230], uint8_t prn)
+{
+  assert(!((prn < 1) || (prn > 32)));
+  prn -= 1;
+
+  static constexpr uint32_t initial_states[32] = {
+      /*PRN 01*/ (uint32_t)0742417664 << 5,
+      /*PRN 02*/ (uint32_t)0756014035 << 5,
+      /*PRN 03*/ (uint32_t)0002747144 << 5,
+      /*PRN 04*/ (uint32_t)0066265724 << 5,
+      /*PRN 05*/ (uint32_t)0601403471 << 5,
+      /*PRN 06*/ (uint32_t)0703232733 << 5,
+      /*PRN 07*/ (uint32_t)0124510070 << 5,
+      /*PRN 08*/ (uint32_t)0617316361 << 5,
+      /*PRN 09*/ (uint32_t)0047541621 << 5,
+      /*PRN 10*/ (uint32_t)0733031046 << 5,
+      /*PRN 11*/ (uint32_t)0713512145 << 5,
+      /*PRN 12*/ (uint32_t)0024437606 << 5,
+      /*PRN 13*/ (uint32_t)0021264003 << 5,
+      /*PRN 14*/ (uint32_t)0230655351 << 5,
+      /*PRN 15*/ (uint32_t)0001314400 << 5,
+      /*PRN 16*/ (uint32_t)0222021506 << 5,
+      /*PRN 17*/ (uint32_t)0540264026 << 5,
+      /*PRN 18*/ (uint32_t)0205521705 << 5,
+      /*PRN 19*/ (uint32_t)0064022144 << 5,
+      /*PRN 20*/ (uint32_t)0120161274 << 5,
+      /*PRN 21*/ (uint32_t)0044023533 << 5,
+      /*PRN 22*/ (uint32_t)0724744327 << 5,
+      /*PRN 23*/ (uint32_t)0045743577 << 5,
+      /*PRN 24*/ (uint32_t)0741201660 << 5,
+      /*PRN 25*/ (uint32_t)0700274134 << 5,
+      /*PRN 26*/ (uint32_t)0010247261 << 5,
+      /*PRN 27*/ (uint32_t)0713433445 << 5,
+      /*PRN 28*/ (uint32_t)0737324162 << 5,
+      /*PRN 29*/ (uint32_t)0311627434 << 5,
+      /*PRN 30*/ (uint32_t)0710452007 << 5,
+      /*PRN 31*/ (uint32_t)0722462133 << 5,
+      /*PRN 32*/ (uint32_t)0050172213 << 5
+  };
+
+  // 3,6,8,11,14,16,18,21,22,23,24
+  static constexpr uint8_t taps [11] = {2,5,7,10,13,15,17,20,21,22,23};
+  uint32_t reg = initial_states[prn];
+
+  sequence[0] = navtools::GetBit<false>(reg, 26);
+  int tap_i = 10;
+
+  for (int j = 1; j < 10230; j++) {
+    // Shift register operation
+    for (int i = 25; i >= 0; i--) {
+      if ((tap_i >= 0) && (i == (int)taps[tap_i])) {
+        navtools::SetBitTo<false>(reg, i+1,
+                          navtools::GetBit<false>(reg,i) ^ sequence[j-1]);
+        tap_i--;
+      }
+      else {
+        navtools::SetBitTo<false>(reg, i+1, navtools::GetBit<false>(reg,i));
+      }
+    }
+    navtools::SetBitTo<false>(reg,0,sequence[j-1]);
+    sequence[j] = navtools::GetBit<false>(reg, 26);
+    tap_i = 10;
+  }
+}
+
+inline void CodeGenL2CM(std::array<bool,10230>& sequence, uint8_t prn)
+{
+  CodeGenL2CM(sequence.data(),prn);
+}
+
+inline void CodeGenL2CL(bool sequence[767250], uint8_t prn)
+{
+  assert(!((prn < 1) || (prn > 32)));
+  prn -= 1;
+
+  static constexpr uint32_t initial_states[32] = {
+      /*PRN 01*/ (uint32_t)0624145772 << 5,
+      /*PRN 02*/ (uint32_t)0506610362 << 5,
+      /*PRN 03*/ (uint32_t)0220360016 << 5,
+      /*PRN 04*/ (uint32_t)0710406104 << 5,
+      /*PRN 05*/ (uint32_t)0001143345 << 5,
+      /*PRN 06*/ (uint32_t)0053023326 << 5,
+      /*PRN 07*/ (uint32_t)0652521276 << 5,
+      /*PRN 08*/ (uint32_t)0206124777 << 5,
+      /*PRN 09*/ (uint32_t)0015563374 << 5,
+      /*PRN 10*/ (uint32_t)0561522076 << 5,
+      /*PRN 11*/ (uint32_t)0023163525 << 5,
+      /*PRN 12*/ (uint32_t)0117776450 << 5,
+      /*PRN 13*/ (uint32_t)0606516355 << 5,
+      /*PRN 14*/ (uint32_t)0003037343 << 5,
+      /*PRN 15*/ (uint32_t)0046515565 << 5,
+      /*PRN 16*/ (uint32_t)0671511621 << 5,
+      /*PRN 17*/ (uint32_t)0605402220 << 5,
+      /*PRN 18*/ (uint32_t)0002576207 << 5,
+      /*PRN 19*/ (uint32_t)0525163451 << 5,
+      /*PRN 20*/ (uint32_t)0266527765 << 5,
+      /*PRN 21*/ (uint32_t)0006760703 << 5,
+      /*PRN 22*/ (uint32_t)0501474556 << 5,
+      /*PRN 23*/ (uint32_t)0743747443 << 5,
+      /*PRN 24*/ (uint32_t)0615534726 << 5,
+      /*PRN 25*/ (uint32_t)0763621420 << 5,
+      /*PRN 26*/ (uint32_t)0720727474 << 5,
+      /*PRN 27*/ (uint32_t)0700521043 << 5,
+      /*PRN 28*/ (uint32_t)0222567263 << 5,
+      /*PRN 29*/ (uint32_t)0132765304 << 5,
+      /*PRN 30*/ (uint32_t)0746332245 << 5,
+      /*PRN 31*/ (uint32_t)0102300466 << 5,
+      /*PRN 32*/ (uint32_t)0255231716 << 5
+  };
+
+  // 3,6,8,11,14,16,18,21,22,23,24
+  static constexpr uint8_t taps [11] = {2,5,7,10,13,15,17,20,21,22,23};
+  uint32_t reg = initial_states[prn];
+
+  sequence[0] = navtools::GetBit<false>(reg, 26);
+  int tap_i = 10;
+
+  for (int j = 1; j < 767250; j++) {
+    // Shift register operation
+    for (int i = 25; i >= 0; i--) {
+      if ((tap_i >= 0) && (i == (int)taps[tap_i])) {
+        navtools::SetBitTo<false>(reg, i+1,
+                          navtools::GetBit<false>(reg,i) ^ sequence[j-1]);
+        tap_i--;
+      }
+      else {
+        navtools::SetBitTo<false>(reg, i+1, navtools::GetBit<false>(reg,i));
+      }
+    }
+    navtools::SetBitTo<false>(reg,0,sequence[j-1]);
+    sequence[j] = navtools::GetBit<false>(reg, 26);
+    tap_i = 10;
+  }
+  uint32_t val = ((uint32_t)0267724236 << 5);
+  std::cout << reg << '\n' << val << '\n';
+}
+
+inline void CodeGenL2CL(std::array<bool,767250>& sequence, uint8_t prn)
+{
+  CodeGenL2CM(sequence.data(),prn);
+}
 
 inline void CodeGenL5IQ(bool l5i[10230], bool l5q[10230], uint8_t prn)
 {
@@ -202,7 +343,7 @@ inline void CodeGenL5IQ(bool l5i[10230], bool l5q[10230], uint8_t prn)
   }
 }
 
-inline void CodeGenL5IQ(std::array<bool,10230> l5i, std::array<bool,10230> l5q,
+inline void CodeGenL5IQ(std::array<bool,10230>& l5i, std::array<bool,10230>& l5q,
                         uint8_t prn)
 {
   CodeGenL5IQ(l5i.data(), l5q.data(), prn);
