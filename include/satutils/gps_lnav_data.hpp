@@ -4,18 +4,34 @@
 #include <cstdint>
 #include <string>
 #include <sstream>
+#include <cassert>
 
 #include <navtools/constants.hpp>
 #include <navtools/binary-ops.hpp>
 #include <satutils/ephemeris.hpp>
+#include "gnss-constants.hpp"
 
 
 namespace satutils {
 
 
-class LnavData
+class LnavSubframe
 {
 public:
+  // PARITY XOR COMBINATIONS
+  //                                      {1,2,3,5,6,10,11,12,13,14,17,18,20,23}
+  static constexpr uint8_t LnavP25 [14] = {0,1,2,4,5, 9,10,11,12,13,16,17,19,22};
+  //                                      {2,3,4,6,7,11,12,13,14,15,18,19,21,24}
+  static constexpr uint8_t LnavP26 [14] = {1,2,3,5,6,10,11,12,13,14,17,18,20,23};
+  //                                      {1,3,4,5,7, 8,12,13,14,15,16,19,20,22}
+  static constexpr uint8_t LnavP27 [14] = {0,2,3,4,6, 7,11,12,13,14,15,18,19,21};
+  //                                      {2,4,5,6,8, 9,13,14,15,16,17,20,21,23}
+  static constexpr uint8_t LnavP28 [14] = {1,3,4,5,7, 8,12,13,14,15,16,19,20,22};
+  //                                      {1,3,5,6,7, 9,10,14,15,16,17,18,21,22,24}
+  static constexpr uint8_t LnavP29 [15] = {0,2,4,5,6, 8, 9,13,14,15,16,17,20,21,23};
+  //                                      {3,5,6,8,9,10,11,13,15,19,22,23,24}
+  static constexpr uint8_t LnavP30 [13] = {2,4,5,7,8, 9,10,12,14,18,21,22,23};
+
   class Word
   {
   private:
@@ -75,6 +91,32 @@ public:
       navtools::SetBitTo(data_,i,val);
     }
 
+    uint32_t GetParity(const bool D29, const bool D30) const
+    {
+      uint32_t word = data_;
+      navtools::SetBitTo<false>
+        (word, 24, (D29 ^ navtools::MultiXor<14,false>(word, LnavP25)));
+      navtools::SetBitTo<false>
+        (word, 25, (D30 ^ navtools::MultiXor<14,false>(word, LnavP26)));
+      navtools::SetBitTo<false>
+        (word, 26, (D29 ^ navtools::MultiXor<14,false>(word, LnavP27)));
+      navtools::SetBitTo<false>
+        (word, 27, (D30 ^ navtools::MultiXor<14,false>(word, LnavP28)));
+      navtools::SetBitTo<false>
+        (word, 28, (D30 ^ navtools::MultiXor<15,false>(word, LnavP29)));
+      navtools::SetBitTo<false>
+        (word, 29, (D29 ^ navtools::MultiXor<13,false>(word, LnavP30)));
+      for (uint8_t i = 0; i < 24; i++) {
+        navtools::SetBitTo<false>(word, i, navtools::GetBit<false>(word,i) ^ D30);
+      }
+      return word;
+    }
+
+    void ApplyParity(const bool D29, const bool D30)
+    {
+      data_ = GetParity(D29,D30);
+    }
+
     std::string str() const
     {
       std::stringstream stream;
@@ -90,7 +132,7 @@ public:
   {
     T quotient = param / scale_factor;
     return static_cast<uint32_t>(quotient < 0 ? quotient - 0.5 : quotient + 0.5);
-  9
+  }
 
   template<typename T>
   static T ParamFromBinary(uint8_t data, const T scale_factor,
@@ -341,14 +383,20 @@ public:
   static uint16_t t_oe(const T toe)
   { return ParamToBinary<T>(toe, scale_factors<T>.t_oe); }
 
+
 private:
   Word words_ [10]; // first bit chronologically is the MSB
 
 public:
   // returns false if parity check failed
   //bool LoadParitySubframe(subframe);
-
   
+  bool GetBit(const uint32_t bit_idx)
+  {
+    assert(bit_idx < 300);
+    return words_[bit_idx / 30](bit_idx % 30);
+  }
+
   // -------------- WORDS 1 and 2 - APPLICABLE TO ALL SUBFRAMES --------------
   bool CheckPreamble() const
   { return (words_[0].GetSegment(0, 7) == 0x8B); }
@@ -565,6 +613,27 @@ public:
                            num_bits.IDOT, signage.IDOT);
   }
 
+  
+  // --------------------- APPLY PARITY TO CURRENT DATA ----------------------
+  void ApplyParity(bool& D29, bool& D30)
+  {
+    //                           1,3,5,6,7,9,10,14,15,16,17,18,21,22
+    static uint8_t arr29 [14] = {0,2,4,5,6,8, 9,13,14,15,16,17,20,21};
+    //                           3,5,6,8,9,10,11,13,15,19,22,24
+    static uint8_t arr30 [12] = {2,4,5,7,8, 9,10,12,14,18,21,23};
+    
+    for (uint8_t w = 0; w < 10; w++) {
+      // setting bearing bits
+      if ((w == 1) || (w == 9)) {
+        words_[w].SetBit(23, D30 ^ navtools::MultiXor<14,false>( words_[w].data(), arr29 ));
+        words_[w].SetBit(22, D29 ^ navtools::MultiXor<12,false>( words_[w].data(), arr30 ));
+      }
+      words_[w].ApplyParity(D29, D30);
+      D29 = words_[w](28);
+      D30 = words_[w](29);
+    }
+  }
+
 
   // --------------------- SETTING WORD 1 and 2 CONTENTS ---------------------
   void SetBit(const int word_idx, const int bit_idx, const bool val)
@@ -589,6 +658,13 @@ public:
   void SetIntegrityStatusFlag(const bool flag)
   { words_[0].SetBit(22,flag); }
 
+  void SetTlm(const uint32_t tlm, const bool integrity_flag)
+  {
+    SetPreamble();
+    SetTlmMessage(tlm);
+    SetIntegrityStatusFlag(integrity_flag);
+  }
+
   void SetTruncatedTow(const uint32_t tow_trunc)
   { words_[1].SetSegment(tow_trunc,0,2,18); }
 
@@ -604,19 +680,24 @@ public:
   void SetSubframeId(const uint8_t sf_id)
   { words_[1].SetSegment(sf_id,19,0,2); }
 
+  void SetHow(const uint32_t tow_count, const bool alert_flag,
+              const bool spoof_flag, const uint8_t sf_id)
+  {
+    SetTow(tow_count);
+    SetAlertFlag(alert_flag);
+    SetAntiSpoofFlag(spoof_flag);
+    SetSubframeId(sf_id);
+  }
 
   // ------------------- SETTING SUBFRAME-SPECIFIC CONTENT -------------------
   // Sets all subframe 1 - specific info (words 3 - 10)
   template<typename T>
   void SetSubframe1Params(const KeplerElements<T>& ephems,
-                          const uint32_t tow,
                           const uint16_t week_number,
                           const uint8_t l2_flag,
                           const uint8_t ura,
                           const uint8_t health)
   {
-    SetPreamble();
-    SetTow(tow);
     SetSubframeId(1);
 
     words_[2].SetSegment(0, week_number, 0, 9);
@@ -638,13 +719,10 @@ public:
 
   template<typename T>
   void SetSubframe2Params(const KeplerElements<T>& ephems,
-                          const uint32_t tow,
                           const bool fit_interval_flag,
                           const uint8_t aodo)
   {
-    SetPreamble();
-    SetTow(tow);
-    SetSubframeId(1);
+    SetSubframeId(2);
 
     words_[2].SetSegment(0, (uint8_t) ephems.iode, 0, 7);
     words_[2].SetSegment(8, C_rs(ephems.crs), 0, 15);
@@ -673,11 +751,9 @@ public:
   }
 
   template<typename T>
-  void SetSubframe3Params(const KeplerElements<T>& ephems, const uint32_t tow)
+  void SetSubframe3Params(const KeplerElements<T>& ephems)
   {
-    SetPreamble();
-    SetTow(tow);
-    SetSubframeId(1);
+    SetSubframeId(3);
 
     words_[2].SetSegment(0, C_ic(ephems.cic), 0, 15);
     int32_t omega0_bin = OMEGA_0(ephems.omega0);
@@ -706,18 +782,18 @@ public:
 };
 
 
-#include <array>
-
-// Prototype
-class GpsSatellite
+template<typename T>
+class LnavGenerator
 {
 private:
-  unsigned int id_;
-  //TODO Ephemerides
-  LnavData lnav_data [2];
+  const KeplerElements<T>& ephems_;
 
-  // ---------------------------- LNAV DATA STUFF ----------------------------
-  // LNAV info - current values will be written when a new subframe is generated
+  bool initialized_ {false};
+  LnavSubframe subframes_ [2];
+  uint32_t subframe_indices_ [2];
+  uint16_t weeks_ [2];
+  uint8_t leading_index_ {0};
+  
   uint16_t tlm_message_ {0xAAAA};
   bool integrity_status_flag_ {false};
   bool alert_flag_ {false};
@@ -735,13 +811,113 @@ private:
   bool d29_ {false};
   bool d30_ {false};
 
-public:
-  std::array<bool,1023> ca_code_;
+  // NOTE: there are exactly 604,800 seconds in a GPS week (100,800 subframes)
+
+  void WriteSubframe(int sf_i)
+  {
+    uint8_t sf_num = (subframe_indices_[sf_i]%6)+1;
+    subframes_[sf_i].SetTlm(tlm_message_, integrity_status_flag_);
+    subframes_[sf_i].SetHow((subframe_indices_[sf_i]+1)*4, alert_flag_,
+                            anti_spoof_flag_, sf_num);
+    switch(sf_num) {
+      case 1:
+      subframes_[sf_i].SetSubframe1Params(ephems_, weeks_[sf_i], l2_flag_, ura_, health_);
+      break;
+      case 2:
+      subframes_[sf_i].SetSubframe2Params(ephems_, fit_interval_flag_, aodo_);
+      break;
+      case 3:
+      subframes_[sf_i].SetSubframe3Params(ephems_);
+      break;
+      case 4:
+      //TODO almanac
+      break;
+      case 5:
+      //TODO almanac
+      break;
+      default:
+      assert((sf_num > 0) && (sf_num < 6));
+      break;
+    }
+    subframes_[sf_i].ApplyParity(d29_, d30_);
+  }
 
   
+  void InitializeSubframes(const uint32_t subframe_of_week)
+  {
+    subframe_indices_[0] = subframe_of_week;
+    subframe_indices_[1] = (subframe_of_week - 1) % 100800;
+    if (subframe_of_week < (subframe_of_week - 1))
+      weeks_[1] = weeks_[0] - 1;
+    else
+      weeks_[1] = weeks_[0];
+    WriteSubframe(0);
+    WriteSubframe(1);
+    leading_index_ = 0;
+    initialized_ = true;
+  }
 
+
+  int GetStoredFrameIndex(const uint32_t subframe_of_week)
+  {
+    if (!initialized_) {
+      InitializeSubframes(subframe_of_week);
+      return 0;
+    }
+    
+    // If initialized already, see if it's already stored. If not, replace the older one.
+    if (subframe_of_week == subframe_indices_[0])
+      return 0;
+    else if (subframe_of_week == subframe_indices_[1])
+      return 1;
+    else if (subframe_of_week > subframe_indices_[leading_index_]) {
+      uint8_t sf_idx = (leading_index_ + 1) % 2;
+      subframe_indices_[sf_idx] = subframe_of_week;
+      weeks_[sf_idx] = weeks_[leading_index_];
+      WriteSubframe(sf_idx);
+      leading_index_ = sf_idx;
+    }
+    else {
+      // assuming rollover if we "go back in time"
+      weeks_[0] = weeks_[leading_index_] + 1;
+      InitializeSubframes(subframe_of_week);
+      return 0;
+    }
+  }
+
+public:
+  LnavGenerator(KeplerElements<T>& ephems, uint16_t initial_gps_week)
+    : ephems_{ephems}, initialized_{false}
+  {
+    weeks_[0] = initial_gps_week;
+  }
+
+  LnavGenerator(KeplerElements<T>& ephems, uint16_t initial_gps_week, uint32_t subframe_of_week)
+    : ephems_{ephems}, initialized_{false}
+  {
+    weeks_[0] = initial_gps_week;
+    InitializeSubframes(subframe_of_week);
+  }
+
+  /*
+  template<typename FixedType>
+  bool GetBit(FixedType gps_time)
+  {
+    int sf_idx = GetStoredFrameIndex( static_cast<uint32_t>(gps_time) / 6 );
+    uint32_t bit_idx = static_cast<uint32_t>(circmod(gps_time, FixedType(0.02))) % 300;
+    return subframes_[sf_idx].GetBit(bit_idx);
+  }
+  */
+
+  // gps_seconds is the number of seconds into the current week
+  // bit_idx is bit in the current subframe, so it must be an int in [0,299]
+  template<typename FixedType>
+  bool GetBit(const uint32_t gps_seconds, const uint32_t bit_idx)
+  {
+    int sf_idx = GetStoredFrameIndex(gps_seconds / 6);
+    return subframes_[sf_idx].GetBit(bit_idx);
+  }
 };
-
 
 } // namespace satutils
 #endif
