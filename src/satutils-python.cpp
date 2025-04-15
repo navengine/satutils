@@ -364,7 +364,7 @@ PYBIND11_MODULE(_satutils_core, h) {
   // KeplerEphem
   py::class_<KeplerEphem<double>>(eph, "KeplerEphem")
       .def(py::init<>())
-      .def(py::init<const KeplerEphem<double> &>(), py::arg("eph"))
+      .def(py::init<const KeplerElements<double> &>(), py::arg("eph"))
       .def(
           "SetEphemerides",
           &KeplerEphem<double>::SetEphemerides,

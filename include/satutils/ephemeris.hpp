@@ -83,8 +83,8 @@ struct Sgp4Elements {
 template <typename T = double>
 class KeplerEphem : public KeplerElements<T> {
  public:
-  KeplerEphem() = default;
-  KeplerEphem(const KeplerElements<T> &eph) {
+  KeplerEphem<T>() = default;
+  KeplerEphem<T>(const KeplerElements<T> &eph) {
     SetEphemerides(eph);
   };
 
