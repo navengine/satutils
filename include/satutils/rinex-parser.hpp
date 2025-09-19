@@ -33,7 +33,8 @@ namespace satutils {
  * @brief
  */
 template <typename T>
-void ParseTimeBlock(int &week, T &time, const std::string &timeline) {
+void ParseTimeBlock(int &week, T &time, const std::string &timeline)
+{
   int year = std::stoi(timeline.substr(0, 4));
   unsigned int month = std::stoi(timeline.substr(5, 2));
   unsigned int day = std::stoi(timeline.substr(8, 2));
@@ -51,7 +52,8 @@ void ParseTimeBlock(int &week, T &time, const std::string &timeline) {
  * @brief
  */
 template <typename T>
-std::vector<T> ParseNavBlock(const std::string &navblock) {
+std::vector<T> ParseNavBlock(const std::string &navblock)
+{
   std::vector<T> navdata;
   std::string navword;
   std::istringstream iss;
@@ -76,7 +78,8 @@ std::vector<T> ParseNavBlock(const std::string &navblock) {
  */
 template <typename T>
 std::map<std::string, std::pair<KlobucharElements<T>, KeplerElements<T>>> RinexParser(
-    std::string filename) {
+    std::string filename)
+{
   // safely open file
   std::ifstream fid = std::ifstream(filename);
   if (!fid.is_open()) {
@@ -117,6 +120,7 @@ std::map<std::string, std::pair<KlobucharElements<T>, KeplerElements<T>>> RinexP
       if (line.find(GPS_ALPHA_TOKEN) != std::string::npos) {
         // found gps klobuchar alpha parameters
         int i = 0;
+        //TODO exponent could be marked with 'D' instead of 'E'
         while (iss >> tmp_val) {
           switch (i) {
             case 0:
@@ -136,7 +140,8 @@ std::map<std::string, std::pair<KlobucharElements<T>, KeplerElements<T>>> RinexP
           }
           i++;
         }
-      } else if (line.find(GPS_BETA_TOKEN) != std::string::npos) {
+      }
+      else if (line.find(GPS_BETA_TOKEN) != std::string::npos) {
         // found gps klobuchar beta parameters
         int i = 0;
         while (iss >> tmp_val) {
@@ -158,7 +163,8 @@ std::map<std::string, std::pair<KlobucharElements<T>, KeplerElements<T>>> RinexP
           }
           i++;
         }
-      } else if (line.find(GALILEO_IONO_TOKEN) != std::string::npos) {
+      }
+      else if (line.find(GALILEO_IONO_TOKEN) != std::string::npos) {
         // found galileo ionosphere alpha parameters
         int i = 0;
         while (iss >> tmp_val) {
@@ -199,10 +205,11 @@ std::map<std::string, std::pair<KlobucharElements<T>, KeplerElements<T>>> RinexP
   // --- Parse Rinex Entries ---
   while (!fid.eof()) {
     std::getline(fid, line, '\n');
-
+    if (line.size() < 4) continue;
     sv_id = line.substr(0, 3);
     ParseTimeBlock<T>(week, toc, line.substr(4, 20));
     navline = line.substr(23, line.length());
+    //TODO this assumes the same number of lines for each constellation type
     for (int i = 1; i < 8; i++) {
       std::getline(fid, line, '\n');
       navline += line.substr(4, line.length());
@@ -240,7 +247,8 @@ std::map<std::string, std::pair<KlobucharElements<T>, KeplerElements<T>>> RinexP
       TMP_EPH.ura = nav[23];       // [m]
       TMP_EPH.health = nav[24];
       my_map.insert({sv_id, std::make_pair(GPS_IONO, TMP_EPH)});
-    } else if (sv_id[0] == 'E') {
+    }
+    else if (sv_id[0] == 'E') {
       // Galileo satellite data
 
       // eph.id = sv_id;
@@ -281,6 +289,7 @@ std::map<std::string, std::pair<KlobucharElements<T>, KeplerElements<T>>> RinexP
 
   return my_map;
 };
+
 
 }  // namespace satutils
 

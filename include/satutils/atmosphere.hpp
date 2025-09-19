@@ -46,8 +46,8 @@ struct KlobucharElements {
 template <typename Tp = double>
 class IonoModel : public KlobucharElements<Tp> {
  public:
-  IonoModel<Tp>() = default;
-  IonoModel<Tp>(const KlobucharElements<Tp> &klob) {
+  IonoModel() = default;
+  IonoModel(const KlobucharElements<Tp> &klob) {
     SetKlobuchar(klob);
   };
 

@@ -21,8 +21,9 @@
 
 #include <Eigen/Dense>
 #include <cmath>
-#include <navtools/constants.hpp>
+#include <random>
 
+#include <navtools/constants.hpp>
 #include "satutils/time.hpp"
 
 namespace satutils {
@@ -31,7 +32,8 @@ namespace satutils {
  * @brief Ephemerides based on Keplerian orbital elements
  */
 template <typename T = double>
-struct KeplerElements {
+struct KeplerElements
+{
   T iode{std::nan("1")};      // Issue of data Ephemeris
   T iodc{std::nan("1")};      // Issue of data Clock
   T toe{std::nan("1")};       // Time of Ephemeris
@@ -59,6 +61,7 @@ struct KeplerElements {
   T health{std::nan("1")};    // Satellite health
 };
 
+
 /**
  * @brief Ephemerides based on SGP4 orbital elements
  */
@@ -77,6 +80,7 @@ struct Sgp4Elements {
   T nDDot{std::nan("1")};       // (XNDD60) 2nd derivative of mean motion
   T m0{std::nan("1")};          // (XM0) mean anomaly
 };
+
 
 //! ------------------------------------------------------------------------------------------------
 
@@ -249,12 +253,12 @@ class KeplerEphem : public KeplerElements<T> {
    * *=== init ===*
    * @brief Initialize additional ephemeris constants
    */
-  void init() {
-    T E2 = this->e * this->e;  // eccentricity squared
+  void init()
+  {
     A_ = this->sqrtA * this->sqrtA;
     n0_ = std::sqrt(navtools::WGS84_MU<T> / (A_ * A_ * A_));  // computed mean motion
     n_ = n0_ + this->deltan;                                  // corrected mean motion
-    SQ1ME2_ = std::sqrt(1.0 - E2);                            // common eccentricity factor
+    SQ1ME2_ = std::sqrt(1.0 - (this->e * this->e));                            // common eccentricity factor
   };
 
   /**
@@ -279,6 +283,196 @@ class KeplerEphem : public KeplerElements<T> {
   T n_;       // corrected mean motion
   T SQ1ME2_;  // common eccentricity factor
 };
+
+
+/**
+ * @brief Dedicated solely to calculating Kepler orbits with nothing extra
+ */
+template<typename T = double>
+class KeplerOrbit
+{
+protected:
+  T toe_{std::nan("1")};       // Reference Time
+  T e_{std::nan("1")};         // Eccentricity
+  T A_{std::nan("1")};         // Square root of semi-major axis
+  T n_{std::nan("1")};         // Mean motion
+  T m0_{std::nan("1")};        // Mean anomaly
+  T omega0_{std::nan("1")};    // Longitude of ascending node
+  T omega_{std::nan("1")};     // Argument of perigee
+  T omega_dot_{std::nan("1")}; // Rate of right ascension
+  T i0_{std::nan("1")};        // Inclination angle
+  T i_dot_{std::nan("1")};     // Rate of inclination angle
+  T cuc_{std::nan("1")};       // Cos-harmonic correction coef. to the argument of latitude
+  T cus_{std::nan("1")};       // Sin-harmonic correction coef. to the argument of latitude
+  T cic_{std::nan("1")};       // Cos-harmonic correction coef. to the angle of inclination
+  T cis_{std::nan("1")};       // Sin-harmonic correction coef. to the angle of inclination
+  T crc_{std::nan("1")};       // Cos-harmonic correction coef. to the orbit radius
+  T crs_{std::nan("1")};       // Sin-harmonic correction coef. to the orbit radius
+  T sq1me2_{std::nan("1")};
+
+  static constexpr int E_ITERATIONS = 7;
+public:
+  typedef Eigen::Vector<T, 3> Vec;
+
+  KeplerOrbit()
+  {}
+
+  void Randomize()
+  {
+    std::random_device rd; // random seed
+    std::mt19937 gen(rd());
+    std::uniform_real_distribution<T> dist(0.0,1.0);
+    toe_ = dist(gen) * T(604784);
+    e_ = dist(gen) * T(0.03);
+    A_ = dist(gen) * T(60707964) + T(6400900);
+    n_ = std::sqrt(navtools::WGS84_MU<T> / (A_ * A_ * A_)) + (dist(gen) * std::pow(2.0,-27.0) - std::pow(2.0,-26.0));
+    m0_ = (dist(gen) * T(2)) - T(1);
+    omega0_ = (dist(gen) * T(2)) - T(1);
+    omega_ = (dist(gen) * T(2)) - T(1);
+    omega_dot_ = ((dist(gen) * T(2)) - T(1)) * std::pow(2.0,-20.0);
+    i0_ = (dist(gen) * T(2)) - T(1);
+    i_dot_ = ((dist(gen) * T(2)) - T(1)) * std::pow(2.0,-30.0);
+    cuc_ = ((dist(gen) * T(2)) - T(1)) * std::pow(2.0,-14.0);
+    cus_ = ((dist(gen) * T(2)) - T(1)) * std::pow(2.0,-14.0);
+    cic_ = ((dist(gen) * T(2)) - T(1)) * std::pow(2.0,-14.0);
+    cis_ = ((dist(gen) * T(2)) - T(1)) * std::pow(2.0,-14.0);
+    crc_ = ((dist(gen) * T(2)) - T(1)) * std::pow(2.0,10.0);
+    crs_ = ((dist(gen) * T(2)) - T(1)) * std::pow(2.0,10.0);
+    sq1me2_ = std::sqrt(1.0 - (e_ * e_));
+  }
+
+  void Set(const KeplerElements<T>& elms)
+  {
+    toe_ = elms.toe;
+    e_ = elms.e;
+    A_ = elms.sqrtA * elms.sqrtA;
+    n_ = std::sqrt(navtools::WGS84_MU<T> / (A_ * A_ * A_)) + elms.deltan;
+    m0_ = elms.m0;
+    omega0_ = elms.omega0;
+    omega_ = elms.omega;
+    omega_dot_ = elms.omegaDot;
+    i0_ = elms.i0;
+    i_dot_ = elms.iDot;
+    cuc_ = elms.cuc;
+    cus_ = elms.cus;
+    cic_ = elms.cic;
+    cis_ = elms.cis;
+    crc_ = elms.crc;
+    crs_ = elms.crs;
+    sq1me2_ = std::sqrt(1.0 - (e_ * e_));
+  }
+
+  KeplerOrbit(const KeplerElements<T>& elms)
+  {
+    this->Set(elms);
+  }
+
+  template <bool CalcPos = true, bool CalcVel = false, bool CalcAccel = false>
+  void CalculatePVA(const T& transmit_time, Vec* pos, Vec* vel, Vec* acc) const
+  {
+    // satellite clock correction (sv time)
+    T tk = CheckGpsSecond(transmit_time - toe_);
+
+    // mean anomaly
+    T Mk = std::fmod(m0_ + (n_ * tk) + navtools::TWO_PI<T>, navtools::TWO_PI<T>);
+
+    // calculate eccentric anomaly
+    T cos_E, sin_E, dE;
+    T Ek = Mk;
+    for (int i = 0; i < E_ITERATIONS; i++) {
+      cos_E = std::cos(Ek);  // cosine of eccentric anomaly
+      sin_E = std::sin(Ek);  // sine of eccentric anomaly
+      dE = (Mk - Ek + (e_ * sin_E)) / (1.0 - (e_ * cos_E));
+      if (std::abs(dE) < 1e-15) {
+        break;
+      }
+      Ek += dE;
+    }
+    Ek = std::fmod(Ek + navtools::TWO_PI<T>, navtools::TWO_PI<T>);
+    T r_scale = 1.0 - (e_ * cos_E);  // common denominator
+
+    // true anomaly
+    // double vk = 2.0 * np.atan2(np.sqrt((1.0 + e_) / (1.0 - e_)) * np.tan(0.5 * Ek), 1.0);
+    T vk = std::atan2(sq1me2_ * sin_E, cos_E - e_);
+
+    // argument of latitude
+    T Phik = std::fmod(vk + omega_, navtools::TWO_PI<T>);
+    T COS2PHI = std::cos(2.0 * Phik);
+    T SIN2PHI = std::sin(2.0 * Phik);
+
+    // corrections
+    T uk = Phik + (cus_ * SIN2PHI + cuc_ * COS2PHI);      // argument of latitude
+    T rk = A_ * r_scale + (crs_ * SIN2PHI + crc_ * COS2PHI);  // radius
+    T ik = i0_ + i_dot_ * tk + (cis_ * SIN2PHI + cic_ * COS2PHI);  // inclination
+    T wk = std::fmod(
+              omega0_ + tk * (omega_dot_ - navtools::WGS84_OMEGA<T>)-(navtools::WGS84_OMEGA<T> * toe_)
+                + navtools::TWO_PI<T>,
+              navtools::TWO_PI<T>
+           );  // corrected longitude of ascending node
+    T COSU = std::cos(uk);
+    T SINU = std::sin(uk);
+    T COSI = std::cos(ik);
+    T SINI = std::sin(ik);
+    T COSW = std::cos(wk);
+    T SINW = std::sin(wk);
+
+    // position calculations
+    T xk_orb = rk * COSU;  // x-position in orbital frame
+    T yk_orb = rk * SINU;  // y-position in orbital frame
+
+    if constexpr (CalcPos || CalcAccel) {
+      pos->operator()(0) = xk_orb * COSW - yk_orb * COSI * SINW;
+      pos->operator()(1) = xk_orb * SINW + yk_orb * COSI * COSW;
+      pos->operator()(2) = yk_orb * SINI;
+    }
+
+    // derivatives
+    if constexpr (CalcVel || CalcAccel) {
+      T EDotk = n_ / r_scale;               // eccentric anomaly rate
+      T vDotk = EDotk * sq1me2_ / r_scale;  // true anomaly rate
+      T iDotk = this->i_dot_ +
+                2.0 * vDotk * (this->cis_ * COS2PHI - this->cic_ * SIN2PHI);  // inclination angle rate
+      T uDotk =
+          vDotk *
+          (1.0 + 2.0 * (this->cus_ * COS2PHI - this->cuc_ * SIN2PHI));  // argument of latitude rate
+      T rDotk = (this->e_ * A_ * EDotk * sin_E) +
+                2.0 * vDotk * (this->crs_ * COS2PHI - this->crc_ * SIN2PHI);  // radius rate
+      T wDotk = this->omega_dot_ - navtools::WGS84_OMEGA<T>;  // longitude of ascending node rate
+
+      // velocity calculations
+      T xDotk_orb = rDotk * COSU - rk * uDotk * SINU;  // x-velocity in orbital frame
+      T yDotk_orb = rDotk * SINU + rk * uDotk * COSU;  // y-velocity in orbital frame
+      vel->operator()(0) = -(xk_orb * wDotk * SINW) + (xDotk_orb * COSW) - (yDotk_orb * SINW * COSI) -
+               (yk_orb * (wDotk * COSW * COSI - iDotk * SINW * SINI));
+      vel->operator()(1) = (xk_orb * wDotk * COSW) + (xDotk_orb * SINW) + (yDotk_orb * COSW * COSI) -
+               (yk_orb * (wDotk * SINW * COSI + iDotk * COSW * SINI));
+      vel->operator()(2) = (yDotk_orb * SINI) + (yk_orb * iDotk * COSI);
+
+      if constexpr (CalcAccel) {
+        T F = -1.5 * navtools::J2<T> * (navtools::WGS84_MU<T> / (rk * rk)) *
+              std::pow(navtools::WGS84_R0<T> / rk, 2);
+        T TMP1 = -navtools::WGS84_MU<T> / (rk * rk * rk);
+        T TMP2 = 5.0 * std::pow(pos(2) / rk, 2);
+        T TMP3 = navtools::WGS84_OMEGA<T> * navtools::WGS84_OMEGA<T>;
+
+        // state
+        acc->operator()(0) = TMP1 * pos(0) + F * (1.0 - TMP2) * (pos(0) / rk) +
+                 2.0 * vel(1) * navtools::WGS84_OMEGA<T> + pos(0) * TMP3;
+        acc->operator()(1) = TMP1 * pos(1) + F * (1.0 - TMP2) * (pos(1) / rk) -
+                 2.0 * vel(0) * navtools::WGS84_OMEGA<T> + pos(1) * TMP3;
+        acc->operator()(2) = TMP1 * pos(2) + F * (3.0 - TMP2) * (pos(2) / rk);
+      }
+    }
+  }
+
+  Vec P(const T& time)
+  {
+    Vec result;
+    this->CalculatePVA<true,false,false>(time,&result,nullptr,nullptr);
+    return result;
+  }
+};
+
 
 template <typename T = double>
 class Sgp4Ephem : public Sgp4Elements<T> {

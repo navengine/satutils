@@ -431,35 +431,35 @@ public:
 
 
   // ---------------------- GETTING SUBFRAME 1 CONTENTS ----------------------
-  template<typename T>
+  template<typename T = double>
   T T_GD() const
   {
     return ParamFromBinary(words_[6].GetSegment(16,23), scale_factors<T>.T_GD,
                            num_bits.T_GD, signage.T_GD);
   }
 
-  template<typename T>
+  template<typename T = double>
   T t_oc() const
   {
     return ParamFromBinary(words_[7].GetSegment(8,23), scale_factors<T>.t_oc,
                            num_bits.t_oc, signage.t_oc);
   }
 
-  template<typename T>
+  template<typename T = double>
   T a_f2() const
   {
     return ParamFromBinary(words_[8].GetSegment(0,7), scale_factors<T>.a_f2,
                            num_bits.a_f2, signage.a_f2);
   }
 
-  template<typename T>
+  template<typename T = double>
   T a_f1() const
   {
     return ParamFromBinary(words_[8].GetSegment(8,23), scale_factors<T>.a_f1,
                            num_bits.a_f1, signage.a_f1);
   }
 
-  template<typename T>
+  template<typename T = double>
   T a_f0() const
   {
     return ParamFromBinary(words_[9].GetSegment(0,21), scale_factors<T>.a_f0,
@@ -478,21 +478,21 @@ public:
   uint8_t IODE_sf2() const
   { return words_[2].GetSegment(0,7); }
 
-  template<typename T>
+  template<typename T = double>
   T C_rs() const
   {
     return ParamFromBinary(words_[2].GetSegment(8,23), scale_factors<T>.C_rs,
                            num_bits.C_rs, signage.C_rs);
   }
 
-  template<typename T>
+  template<typename T = double>
   T delta_n() const
   {
     return ParamFromBinary(words_[3].GetSegment(0,15), scale_factors<T>.delta_n,
                            num_bits.delta_n, signage.delta_n);
   }
 
-  template<typename T>
+  template<typename T = double>
   T M_0() const
   {
     uint32_t temp = words_[3].GetSegment(16,23) << 24;
@@ -501,14 +501,14 @@ public:
                            num_bits.M_0, signage.M_0);
   }
 
-  template<typename T>
+  template<typename T = double>
   T C_uc() const
   {
     return ParamFromBinary(words_[5].GetSegment(0,15), scale_factors<T>.C_uc,
                            num_bits.C_uc, signage.C_uc);
   }
 
-  template<typename T>
+  template<typename T = double>
   T e() const
   {
     uint32_t temp = words_[5].GetSegment(16,23) << 24;
@@ -517,14 +517,14 @@ public:
                            num_bits.e, signage.e);
   }
 
-  template<typename T>
+  template<typename T = double>
   T C_us() const
   {
     return ParamFromBinary(words_[7].GetSegment(0,15), scale_factors<T>.C_us,
                            num_bits.C_us, signage.C_us);
   }
 
-  template<typename T>
+  template<typename T = double>
   T sqrtA() const
   {
     uint32_t temp = words_[7].GetSegment(16,23) << 24;
@@ -533,7 +533,7 @@ public:
                            num_bits.sqrtA, signage.sqrtA);
   }
 
-  template<typename T>
+  template<typename T = double>
   T t_oe() const
   {
     return ParamFromBinary(words_[9].GetSegment(0,15), scale_factors<T>.t_oe,
@@ -548,14 +548,14 @@ public:
 
 
   // ---------------------- GETTING SUBFRAME 3 CONTENTS ----------------------
-  template<typename T>
+  template<typename T = double>
   T C_ic() const
   {
     return ParamFromBinary(words_[2].GetSegment(0,15), scale_factors<T>.C_ic,
                            num_bits.C_ic, signage.C_ic);
   }
 
-  template<typename T>
+  template<typename T = double>
   T OMEGA_0() const
   {
     uint32_t temp = words_[2].GetSegment(16,23) << 24;
@@ -564,14 +564,14 @@ public:
                            num_bits.OMEGA_0, signage.OMEGA_0);
   }
 
-  template<typename T>
+  template<typename T = double>
   T C_is() const
   {
     return ParamFromBinary(words_[4].GetSegment(0,15), scale_factors<T>.C_is,
                            num_bits.C_is, signage.C_is);
   }
 
-  template<typename T>
+  template<typename T = double>
   T i_0() const
   {
     uint32_t temp = words_[4].GetSegment(16,23) << 24;
@@ -580,14 +580,14 @@ public:
                            num_bits.i_0, signage.i_0);
   }
 
-  template<typename T>
+  template<typename T = double>
   T C_rc() const
   {
     return ParamFromBinary(words_[6].GetSegment(0,15), scale_factors<T>.C_rc,
                            num_bits.C_rc, signage.C_rc);
   }
 
-  template<typename T>
+  template<typename T = double>
   T omega() const
   {
     uint32_t temp = words_[6].GetSegment(16,23) << 24;
@@ -596,7 +596,7 @@ public:
                            num_bits.omega, signage.omega);
   }
 
-  template<typename T>
+  template<typename T = double>
   T OMEGA_DOT() const
   {
     return ParamFromBinary(words_[8].GetSegment(0,23), scale_factors<T>.OMEGA_DOT,
@@ -606,7 +606,7 @@ public:
   uint8_t IODE_sf3() const
   { return words_[9].GetSegment(0,7); }
 
-  template<typename T>
+  template<typename T = double>
   T IDOT() const
   {
     return ParamFromBinary(words_[9].GetSegment(8,21), scale_factors<T>.IDOT,
@@ -635,7 +635,7 @@ public:
   }
 
 
-  // --------------------- SETTING WORD 1 and 2 CONTENTS ---------------------
+  // ------------------------ SETTING INDIVIDUAL BITS ------------------------
   void SetBit(const int word_idx, const int bit_idx, const bool val)
   {
     assert((word_idx >= 0) && (word_idx < 10));
@@ -649,6 +649,8 @@ public:
     this->SetBit(index / 30, index % 30, val);
   }
 
+
+  // --------------------- SETTING WORD 1 and 2 CONTENTS ---------------------
   void SetPreamble()
   { words_[0].SetSegment(0x8B,0,0,7); }
 
