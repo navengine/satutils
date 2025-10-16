@@ -471,6 +471,11 @@ public:
     this->CalculatePVA<true,false,false>(time,&result,nullptr,nullptr);
     return result;
   }
+
+  void PV(const T& time, Vec* pos, Vec* vel)
+  {
+    this->CalculatePVA<true,true,false>(time,pos,vel,nullptr);
+  }
 };
 
 

@@ -41,7 +41,7 @@ public:
   public:
     Word() {}
     Word(const uint32_t& val) : data_{val} {}
-    explicit Word(const Word& word) : data_{word.data_} {}
+    Word(const Word& word) : data_{word.data_} {}
 
     uint32_t& data()
     { return data_; }
@@ -788,7 +788,7 @@ template<typename T>
 class LnavGenerator
 {
 private:
-  const KeplerElements<T>& ephems_;
+  KeplerElements<T> ephems_;
 
   bool initialized_ {false};
   LnavSubframe subframes_ [2];
@@ -888,7 +888,7 @@ private:
   }
 
 public:
-  LnavGenerator(KeplerElements<T>& ephems, uint16_t initial_gps_week)
+  LnavGenerator(const KeplerElements<T>& ephems, const uint16_t initial_gps_week)
     : ephems_{ephems}, initialized_{false}
   {
     weeks_[0] = initial_gps_week;
@@ -900,6 +900,9 @@ public:
     weeks_[0] = initial_gps_week;
     InitializeSubframes(subframe_of_week);
   }
+
+  KeplerElements<T>& Ephemeris()
+  { return ephems_; }
 
   /*
   template<typename FixedType>

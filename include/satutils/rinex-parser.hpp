@@ -77,8 +77,8 @@ std::vector<T> ParseNavBlock(const std::string &navblock)
  * @brief
  */
 template <typename T>
-std::map<std::string, std::pair<KlobucharElements<T>, KeplerElements<T>>> RinexParser(
-    std::string filename)
+std::map<std::string, std::pair<KlobucharElements<T>, KeplerElements<T>>>
+RinexParser(std::string filename)
 {
   // safely open file
   std::ifstream fid = std::ifstream(filename);
