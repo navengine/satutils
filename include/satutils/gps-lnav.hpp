@@ -21,7 +21,7 @@
 
 #include <exception>
 #include <iostream>
-#include <navtools/binary-ops.hpp>
+#include <satutils/binary-ops.hpp>
 
 #include "satutils/atmosphere.hpp"
 #include "satutils/ephemeris.hpp"

@@ -16,8 +16,11 @@
 #ifndef SATUTILS_GNSS_CONSTANTS_HPP
 #define SATUTILS_GNSS_CONSTANTS_HPP
 
+#include <iostream>
+
 #include <cmath>
-#include <navtools/constants.hpp>
+#include <navtools/core/macros.hpp>
+#include <navtools/core/constants.hpp>
 
 namespace satutils {
 
@@ -63,10 +66,10 @@ DEFINE_FP_CONSTANT(SGP_XKMPER, 6378.135);             // km per earth radii
 DEFINE_FP_CONSTANT(SGP_S, 1.01222928);                // s
 DEFINE_FP_CONSTANT(SGP_QOMS2T, 1.88027916e-9);        // (q0 - s)^4
 DEFINE_FP_CONSTANT(SGP_XKE, 7.43669161331734132e-2);  // sqrt(G*M)
-DEFINE_FP_CONSTANT(SGP_CK2, 1.0 / 2.0 * navtools::J2<T> * SGP_AE<T> * SGP_AE<T>);
+DEFINE_FP_CONSTANT(SGP_CK2, 1.0 / 2.0 * nt::WGS84_J2<T> * SGP_AE<T> * SGP_AE<T>);
 DEFINE_FP_CONSTANT(
-    SGP_CK4, -3.0 / 8.0 * navtools::J4<T> * SGP_AE<T> * SGP_AE<T> * SGP_AE<T> * SGP_AE<T>);
-DEFINE_FP_CONSTANT(SGP_A3OVK2, -navtools::J3<T> / SGP_CK2<T> * SGP_AE<T> * SGP_AE<T> * SGP_AE<T>);
+    SGP_CK4, -3.0 / 8.0 * nt::WGS84_J4<T> * SGP_AE<T> * SGP_AE<T> * SGP_AE<T> * SGP_AE<T>);
+DEFINE_FP_CONSTANT(SGP_A3OVK2, -nt::WGS84_J3<T> / SGP_CK2<T> * SGP_AE<T> * SGP_AE<T> * SGP_AE<T>);
 
 //* ===== Ephemeris Constants ================================================================== *//
 
@@ -121,7 +124,7 @@ constexpr Float CodeRate()
     return GALILEO_E6_CODE_RATE<Float>;
   }
   else {
-    assert(false);
+    std::cerr << "invalid CodeId used for CodeRate<CodeId,Float>()\n";
     return 0;
   }
 }
@@ -145,7 +148,7 @@ constexpr Float CodeRate(CodeId code)
     case GalileoE6CS:
       return GALILEO_E6_CODE_RATE<Float>;
     default:
-      assert(false);
+      std::cerr << "invalid CodeId used for CodeRate<Float>(CodeId)\n";
       return 0;
   }
 }
@@ -175,7 +178,7 @@ constexpr std::size_t CodeLength()
     return GALILEO_E6_CODE_LENGTH;
   }
   else {
-    assert(false);
+    std::cerr << "invalid CodeId used for CodeLength<CodeId>()\n";
     return 0;
   }
 }
@@ -197,7 +200,7 @@ constexpr std::size_t CodeLength(CodeId code)
     case GalileoE5B:
     case GalileoE6CS:
     default:
-      assert(false);
+      std::cerr << "invalid CodeId used for CodeLength(CodeId)\n";
       return 0;
   }
 }
@@ -224,38 +227,38 @@ constexpr Float CarrierFrequency()
     return GALILEO_E6_FREQUENCY<Float>;
   }
   else {
-    assert(false);
+    std::cerr << "invalid CodeId used for CarrierFrequency<CodeId,Float>()\n";
     return 0;
   }
 }
 
 template <typename Float = double>
 constexpr Float CarrierFrequency(CodeId code) {
-    switch (code) {
-        case GPSCA:
-            return GPS_L1_FREQUENCY<Float>;
-        case GPSL1C:
-            return GPS_L1_FREQUENCY<Float>;
-        case GPSL2CM:
-            return GPS_L2_FREQUENCY<Float>;
-        case GPSL2CL:
-            return GPS_L2_FREQUENCY<Float>;
-        case GPSL5I:
-            return GPS_L5_FREQUENCY<Float>;
-        case GPSL5Q:
-            return GPS_L5_FREQUENCY<Float>;
-        case GalileoE1OS:
-            return GPS_L1_FREQUENCY<Float>;
-        case GalileoE5A:
-            return GALILEO_E5_FREQUENCY<Float>;
-        case GalileoE5B:
-            return GALILEO_E5_FREQUENCY<Float>;
-        case GalileoE6CS:
-            return GALILEO_E6_FREQUENCY<Float>;
-        default:
-            assert(false);
-            return 0;
-    }
+  switch (code) {
+    case GPSCA:
+      return GPS_L1_FREQUENCY<Float>;
+    case GPSL1C:
+      return GPS_L1_FREQUENCY<Float>;
+    case GPSL2CM:
+      return GPS_L2_FREQUENCY<Float>;
+    case GPSL2CL:
+      return GPS_L2_FREQUENCY<Float>;
+    case GPSL5I:
+      return GPS_L5_FREQUENCY<Float>;
+    case GPSL5Q:
+      return GPS_L5_FREQUENCY<Float>;
+    case GalileoE1OS:
+      return GPS_L1_FREQUENCY<Float>;
+    case GalileoE5A:
+      return GALILEO_E5_FREQUENCY<Float>;
+    case GalileoE5B:
+      return GALILEO_E5_FREQUENCY<Float>;
+    case GalileoE6CS:
+      return GALILEO_E6_FREQUENCY<Float>;
+    default:
+      std::cerr << "invalid CodeId used for CarrierFrequency<Float>(CodeId)\n";
+      return 0;
+  }
 }
 
 template<CodeId Code, typename Float = double>
@@ -294,7 +297,7 @@ constexpr Float DataRate()
     return GALILEO_E6_DATA_RATE<Float>;
   }
   else {
-    assert(false);
+    std::cerr << "invalid CodeId used for DataRate<CodeId,Float>()\n";
     return 0;
   }
 }
@@ -319,7 +322,7 @@ constexpr Float DataRate(CodeId code)
     case GalileoE6CS:
       return GALILEO_E6_DATA_RATE<Float>;
     default:
-      assert(false);
+      std::cerr << "invalid CodeId used for DataRate<Float>(CodeId)\n";
       return 0;
   }
 }

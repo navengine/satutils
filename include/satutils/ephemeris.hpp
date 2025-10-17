@@ -23,7 +23,7 @@
 #include <cmath>
 #include <random>
 
-#include <navtools/constants.hpp>
+#include <navtools/core/constants.hpp>
 #include "satutils/time.hpp"
 
 namespace satutils {
@@ -153,7 +153,7 @@ class KeplerEphem : public KeplerElements<T> {
     T tk = CheckGpsSecond(transmit_time - dt_sv - this->toe);  // corrected time difference
 
     // mean anomaly
-    T Mk = std::fmod(this->m0 + n_ * tk + navtools::TWO_PI<T>, navtools::TWO_PI<T>);
+    T Mk = std::fmod(this->m0 + n_ * tk + nt::TWO_PI<T>, nt::TWO_PI<T>);
 
     // calculate eccentric anomaly
     T COSE, SINE, dE;
@@ -167,7 +167,7 @@ class KeplerEphem : public KeplerElements<T> {
       }
       Ek += dE;
     }
-    Ek = std::fmod(Ek + navtools::TWO_PI<T>, navtools::TWO_PI<T>);
+    Ek = std::fmod(Ek + nt::TWO_PI<T>, nt::TWO_PI<T>);
     T DEN = 1.0 - this->e * COSE;  // common denominator
 
     // true anomaly
@@ -175,7 +175,7 @@ class KeplerEphem : public KeplerElements<T> {
     T vk = std::atan2(SQ1ME2_ * SINE, COSE - this->e);
 
     // argument of latitude
-    T Phik = std::fmod(vk + this->omega, navtools::TWO_PI<T>);
+    T Phik = std::fmod(vk + this->omega, nt::TWO_PI<T>);
     T COS2PHI = std::cos(2.0 * Phik);
     T SIN2PHI = std::sin(2.0 * Phik);
 
@@ -186,9 +186,9 @@ class KeplerEphem : public KeplerElements<T> {
     T wk = std::fmod(
         this->omega0 +
             tk *
-                (this->omegaDot - navtools::WGS84_OMEGA<T>)-(navtools::WGS84_OMEGA<T> * this->toe) +
-            navtools::TWO_PI<T>,
-        navtools::TWO_PI<T>);  // longitude of ascending node - (omega == w)
+                (this->omegaDot - nt::WGS84_OMEGA<T>)-(nt::WGS84_OMEGA<T> * this->toe) +
+            nt::TWO_PI<T>,
+        nt::TWO_PI<T>);  // longitude of ascending node - (omega == w)
     T COSU = std::cos(uk);
     T SINU = std::sin(uk);
     T COSI = std::cos(ik);
@@ -206,7 +206,7 @@ class KeplerEphem : public KeplerElements<T> {
         (1.0 + 2.0 * (this->cus * COS2PHI - this->cuc * SIN2PHI));  // argument of latitude rate
     T rDotk = (this->e * A_ * EDotk * SINE) +
               2.0 * vDotk * (this->crs * COS2PHI - this->crc * SIN2PHI);  // radius rate
-    T wDotk = this->omegaDot - navtools::WGS84_OMEGA<T>;  // longitude of ascending node rate
+    T wDotk = this->omegaDot - nt::WGS84_OMEGA<T>;  // longitude of ascending node rate
 
     // position calculations
     T xk_orb = rk * COSU;  // x-position in orbital frame
@@ -225,23 +225,23 @@ class KeplerEphem : public KeplerElements<T> {
     vel(2) = (yDotk_orb * SINI) + (yk_orb * iDotk * COSI);
 
     // relativistic clock calculations (user time)
-    T FESQA = navtools::F<T> * this->e * this->sqrtA;  // relativistic time factor
+    T FESQA = nt::WGS84_REL_F<T> * this->e * this->sqrtA;  // relativistic time factor
     clk(0) = dt_sv + (FESQA * SINE);
-    // clk(0) = dt_sv - 2.0 * pos.dot(vel) / (navtools::LIGHT_SPEED<T> * navtools::LIGHT_SPEED<T>);
+    // clk(0) = dt_sv - 2.0 * pos.dot(vel) / (nt::LIGHT_SPEED<T> * nt::LIGHT_SPEED<T>);
     clk(1) = this->af1 + (2.0 * this->af2 * dt) + (n_ * FESQA * COSE / DEN);
 
     if constexpr (calc_acc) {
-      T F = -1.5 * navtools::J2<T> * (navtools::WGS84_MU<T> / (rk * rk)) *
-            std::pow(navtools::WGS84_R0<T> / rk, 2);
-      T TMP1 = -navtools::WGS84_MU<T> / (rk * rk * rk);
+      T F = -1.5 * nt::WGS84_J2<T> * (nt::WGS84_GM<T> / (rk * rk)) *
+            std::pow(nt::WGS84_A<T> / rk, 2);
+      T TMP1 = -nt::WGS84_GM<T> / (rk * rk * rk);
       T TMP2 = 5.0 * std::pow(pos(2) / rk, 2);
-      T TMP3 = navtools::WGS84_OMEGA<T> * navtools::WGS84_OMEGA<T>;
+      T TMP3 = nt::WGS84_OMEGA<T> * nt::WGS84_OMEGA<T>;
 
       // state
       acc(0) = TMP1 * pos(0) + F * (1.0 - TMP2) * (pos(0) / rk) +
-               2.0 * vel(1) * navtools::WGS84_OMEGA<T> + pos(0) * TMP3;
+               2.0 * vel(1) * nt::WGS84_OMEGA<T> + pos(0) * TMP3;
       acc(1) = TMP1 * pos(1) + F * (1.0 - TMP2) * (pos(1) / rk) -
-               2.0 * vel(0) * navtools::WGS84_OMEGA<T> + pos(1) * TMP3;
+               2.0 * vel(0) * nt::WGS84_OMEGA<T> + pos(1) * TMP3;
       acc(2) = TMP1 * pos(2) + F * (3.0 - TMP2) * (pos(2) / rk);
 
       // clock
@@ -256,7 +256,7 @@ class KeplerEphem : public KeplerElements<T> {
   void init()
   {
     A_ = this->sqrtA * this->sqrtA;
-    n0_ = std::sqrt(navtools::WGS84_MU<T> / (A_ * A_ * A_));  // computed mean motion
+    n0_ = std::sqrt(nt::WGS84_GM<T> / (A_ * A_ * A_));  // computed mean motion
     n_ = n0_ + this->deltan;                                  // corrected mean motion
     SQ1ME2_ = std::sqrt(1.0 - (this->e * this->e));                            // common eccentricity factor
   };
@@ -325,7 +325,7 @@ public:
     toe_ = dist(gen) * T(604784);
     e_ = dist(gen) * T(0.03);
     A_ = dist(gen) * T(60707964) + T(6400900);
-    n_ = std::sqrt(navtools::WGS84_MU<T> / (A_ * A_ * A_)) + (dist(gen) * std::pow(2.0,-27.0) - std::pow(2.0,-26.0));
+    n_ = std::sqrt(nt::WGS84_GM<T> / (A_ * A_ * A_)) + (dist(gen) * std::pow(2.0,-27.0) - std::pow(2.0,-26.0));
     m0_ = (dist(gen) * T(2)) - T(1);
     omega0_ = (dist(gen) * T(2)) - T(1);
     omega_ = (dist(gen) * T(2)) - T(1);
@@ -346,7 +346,7 @@ public:
     toe_ = elms.toe;
     e_ = elms.e;
     A_ = elms.sqrtA * elms.sqrtA;
-    n_ = std::sqrt(navtools::WGS84_MU<T> / (A_ * A_ * A_)) + elms.deltan;
+    n_ = std::sqrt(nt::WGS84_GM<T> / (A_ * A_ * A_)) + elms.deltan;
     m0_ = elms.m0;
     omega0_ = elms.omega0;
     omega_ = elms.omega;
@@ -374,7 +374,7 @@ public:
     T tk = CheckGpsSecond(transmit_time - toe_);
 
     // mean anomaly
-    T Mk = std::fmod(m0_ + (n_ * tk) + navtools::TWO_PI<T>, navtools::TWO_PI<T>);
+    T Mk = std::fmod(m0_ + (n_ * tk) + nt::TWO_PI<T>, nt::TWO_PI<T>);
 
     // calculate eccentric anomaly
     T cos_E, sin_E, dE;
@@ -388,7 +388,7 @@ public:
       }
       Ek += dE;
     }
-    Ek = std::fmod(Ek + navtools::TWO_PI<T>, navtools::TWO_PI<T>);
+    Ek = std::fmod(Ek + nt::TWO_PI<T>, nt::TWO_PI<T>);
     T r_scale = 1.0 - (e_ * cos_E);  // common denominator
 
     // true anomaly
@@ -396,7 +396,7 @@ public:
     T vk = std::atan2(sq1me2_ * sin_E, cos_E - e_);
 
     // argument of latitude
-    T Phik = std::fmod(vk + omega_, navtools::TWO_PI<T>);
+    T Phik = std::fmod(vk + omega_, nt::TWO_PI<T>);
     T COS2PHI = std::cos(2.0 * Phik);
     T SIN2PHI = std::sin(2.0 * Phik);
 
@@ -405,9 +405,9 @@ public:
     T rk = A_ * r_scale + (crs_ * SIN2PHI + crc_ * COS2PHI);  // radius
     T ik = i0_ + i_dot_ * tk + (cis_ * SIN2PHI + cic_ * COS2PHI);  // inclination
     T wk = std::fmod(
-              omega0_ + tk * (omega_dot_ - navtools::WGS84_OMEGA<T>)-(navtools::WGS84_OMEGA<T> * toe_)
-                + navtools::TWO_PI<T>,
-              navtools::TWO_PI<T>
+              omega0_ + tk * (omega_dot_ - nt::WGS84_OMEGA<T>)-(nt::WGS84_OMEGA<T> * toe_)
+                + nt::TWO_PI<T>,
+              nt::TWO_PI<T>
            );  // corrected longitude of ascending node
     T COSU = std::cos(uk);
     T SINU = std::sin(uk);
@@ -437,7 +437,7 @@ public:
           (1.0 + 2.0 * (this->cus_ * COS2PHI - this->cuc_ * SIN2PHI));  // argument of latitude rate
       T rDotk = (this->e_ * A_ * EDotk * sin_E) +
                 2.0 * vDotk * (this->crs_ * COS2PHI - this->crc_ * SIN2PHI);  // radius rate
-      T wDotk = this->omega_dot_ - navtools::WGS84_OMEGA<T>;  // longitude of ascending node rate
+      T wDotk = this->omega_dot_ - nt::WGS84_OMEGA<T>;  // longitude of ascending node rate
 
       // velocity calculations
       T xDotk_orb = rDotk * COSU - rk * uDotk * SINU;  // x-velocity in orbital frame
@@ -449,17 +449,17 @@ public:
       vel->operator()(2) = (yDotk_orb * SINI) + (yk_orb * iDotk * COSI);
 
       if constexpr (CalcAccel) {
-        T F = -1.5 * navtools::J2<T> * (navtools::WGS84_MU<T> / (rk * rk)) *
-              std::pow(navtools::WGS84_R0<T> / rk, 2);
-        T TMP1 = -navtools::WGS84_MU<T> / (rk * rk * rk);
+        T F = -1.5 * nt::WGS84_J2<T> * (nt::WGS84_GM<T> / (rk * rk)) *
+              std::pow(nt::WGS84_A<T> / rk, 2);
+        T TMP1 = -nt::WGS84_GM<T> / (rk * rk * rk);
         T TMP2 = 5.0 * std::pow(pos(2) / rk, 2);
-        T TMP3 = navtools::WGS84_OMEGA<T> * navtools::WGS84_OMEGA<T>;
+        T TMP3 = nt::WGS84_OMEGA<T> * nt::WGS84_OMEGA<T>;
 
         // state
         acc->operator()(0) = TMP1 * pos(0) + F * (1.0 - TMP2) * (pos(0) / rk) +
-                 2.0 * vel(1) * navtools::WGS84_OMEGA<T> + pos(0) * TMP3;
+                 2.0 * vel(1) * nt::WGS84_OMEGA<T> + pos(0) * TMP3;
         acc->operator()(1) = TMP1 * pos(1) + F * (1.0 - TMP2) * (pos(1) / rk) -
-                 2.0 * vel(0) * navtools::WGS84_OMEGA<T> + pos(1) * TMP3;
+                 2.0 * vel(0) * nt::WGS84_OMEGA<T> + pos(1) * TMP3;
         acc->operator()(2) = TMP1 * pos(2) + F * (3.0 - TMP2) * (pos(2) / rk);
       }
     }
@@ -588,7 +588,7 @@ class Sgp4Ephem : public Sgp4Elements<T> {
     T AYN = E * std::sin(OMEGA) + AYNL;
 
     // solve keplers equation
-    T CAPU = std::fmod(XLT - XNODE, navtools::TWO_PI<T>);
+    T CAPU = std::fmod(XLT - XNODE, nt::TWO_PI<T>);
     TEMP2 = CAPU;
     T COSPW, SINPW, EPW;
     for (int i = 0; i < 10; i++) {

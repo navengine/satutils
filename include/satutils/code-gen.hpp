@@ -19,7 +19,7 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
-#include <navtools/binary-ops.hpp>
+#include "binary-ops.hpp"
 
 namespace satutils {
 
@@ -71,17 +71,17 @@ inline void CodeGenCA(bool sequence[1023], uint8_t prn)
 
   for (std::size_t i = 0; i < 1023; i++) {
     // set value in sequence
-    sequence[i] = navtools::GetBit<true>(G1, 9u) ^
-                  navtools::GetBit<true>(G2, g2_out_taps[prn][0]) ^
-                  navtools::GetBit<true>(G2, g2_out_taps[prn][1]);
+    sequence[i] = GetBit<true>(G1, 9u) ^
+                  GetBit<true>(G2, g2_out_taps[prn][0]) ^
+                  GetBit<true>(G2, g2_out_taps[prn][1]);
 
     // shift the registers and set first bits
-    bool feedback1 = navtools::MultiXor<2, true>(G1, taps1);
-    bool feedback2 = navtools::MultiXor<6, true>(G2, taps2);
+    bool feedback1 = MultiXor<2, true>(G1, taps1);
+    bool feedback2 = MultiXor<6, true>(G2, taps2);
     G1 <<= 1;
     G2 <<= 1;
-    navtools::SetBitTo<true>(G1, 0, feedback1);
-    navtools::SetBitTo<true>(G2, 0, feedback2);
+    SetBitTo<true>(G1, 0, feedback1);
+    SetBitTo<true>(G2, 0, feedback2);
   }
 };
 
@@ -134,23 +134,22 @@ inline void CodeGenL2CM(bool sequence[10230], uint8_t prn)
   static constexpr uint8_t taps [11] = {2,5,7,10,13,15,17,20,21,22,23};
   uint32_t reg = initial_states[prn];
 
-  sequence[0] = navtools::GetBit<false>(reg, 26);
+  sequence[0] = GetBit<false>(reg, 26);
   int tap_i = 10;
 
   for (int j = 1; j < 10230; j++) {
     // Shift register operation
     for (int i = 25; i >= 0; i--) {
       if ((tap_i >= 0) && (i == (int)taps[tap_i])) {
-        navtools::SetBitTo<false>(reg, i+1,
-                          navtools::GetBit<false>(reg,i) ^ sequence[j-1]);
+        SetBitTo<false>(reg, i+1, GetBit<false>(reg,i) ^ sequence[j-1]);
         tap_i--;
       }
       else {
-        navtools::SetBitTo<false>(reg, i+1, navtools::GetBit<false>(reg,i));
+        SetBitTo<false>(reg, i+1, GetBit<false>(reg,i));
       }
     }
-    navtools::SetBitTo<false>(reg,0,sequence[j-1]);
-    sequence[j] = navtools::GetBit<false>(reg, 26);
+    SetBitTo<false>(reg,0,sequence[j-1]);
+    sequence[j] = GetBit<false>(reg, 26);
     tap_i = 10;
   }
 }
@@ -204,23 +203,23 @@ inline void CodeGenL2CL(bool sequence[767250], uint8_t prn)
   static constexpr uint8_t taps [11] = {2,5,7,10,13,15,17,20,21,22,23};
   uint32_t reg = initial_states[prn];
 
-  sequence[0] = navtools::GetBit<false>(reg, 26);
+  sequence[0] = GetBit<false>(reg, 26);
   int tap_i = 10;
 
   for (int j = 1; j < 767250; j++) {
     // Shift register operation
     for (int i = 25; i >= 0; i--) {
       if ((tap_i >= 0) && (i == (int)taps[tap_i])) {
-        navtools::SetBitTo<false>(reg, i+1,
-                          navtools::GetBit<false>(reg,i) ^ sequence[j-1]);
+        SetBitTo<false>(reg, i+1,
+                          GetBit<false>(reg,i) ^ sequence[j-1]);
         tap_i--;
       }
       else {
-        navtools::SetBitTo<false>(reg, i+1, navtools::GetBit<false>(reg,i));
+        SetBitTo<false>(reg, i+1, GetBit<false>(reg,i));
       }
     }
-    navtools::SetBitTo<false>(reg,0,sequence[j-1]);
-    sequence[j] = navtools::GetBit<false>(reg, 26);
+    SetBitTo<false>(reg,0,sequence[j-1]);
+    sequence[j] = GetBit<false>(reg, 26);
     tap_i = 10;
   }
   uint32_t val = ((uint32_t)0267724236 << 5);
@@ -311,35 +310,35 @@ inline void CodeGenL5IQ(bool l5i[10230], bool l5q[10230], uint8_t prn)
   uint16_t XA = 0xFFFF;
 
   for (std::size_t j = 0; j < 8190; j++) {
-    l5i[j] = navtools::GetBit<false>(XA, 12) ^ navtools::GetBit<false>(XBI, 12);
-    l5q[j] = navtools::GetBit<false>(XA, 12) ^ navtools::GetBit<false>(XBQ, 12);
+    l5i[j] = GetBit<false>(XA, 12) ^ GetBit<false>(XBI, 12);
+    l5q[j] = GetBit<false>(XA, 12) ^ GetBit<false>(XBQ, 12);
 
-    bool feedback_a = navtools::MultiXor<4,false>(XA,xa_taps);
-    bool feedback_bi = navtools::MultiXor<8,false>(XBI,xb_taps);
-    bool feedback_bq = navtools::MultiXor<8,false>(XBQ,xb_taps);
+    bool feedback_a = MultiXor<4,false>(XA,xa_taps);
+    bool feedback_bi = MultiXor<8,false>(XBI,xb_taps);
+    bool feedback_bq = MultiXor<8,false>(XBQ,xb_taps);
     
     XA >>= 1;
     XBI >>= 1;
     XBQ >>= 1;
-    navtools::SetBitTo<false>(XA,0,feedback_a);
-    navtools::SetBitTo<false>(XBI,0,feedback_bi);
-    navtools::SetBitTo<false>(XBQ,0,feedback_bq);
+    SetBitTo<false>(XA,0,feedback_a);
+    SetBitTo<false>(XBI,0,feedback_bi);
+    SetBitTo<false>(XBQ,0,feedback_bq);
   }
   XA = 0xFFFF;
   for (std::size_t j = 8190; j < 10230; j++) {
-    l5i[j] = navtools::GetBit<false>(XA, 12) ^ navtools::GetBit<false>(XBI, 12);
-    l5q[j] = navtools::GetBit<false>(XA, 12) ^ navtools::GetBit<false>(XBQ, 12);
+    l5i[j] = GetBit<false>(XA, 12) ^ GetBit<false>(XBI, 12);
+    l5q[j] = GetBit<false>(XA, 12) ^ GetBit<false>(XBQ, 12);
 
-    bool feedback_a = navtools::MultiXor<4,false>(XA,xa_taps);
-    bool feedback_bi = navtools::MultiXor<8,false>(XBI,xb_taps);
-    bool feedback_bq = navtools::MultiXor<8,false>(XBQ,xb_taps);
+    bool feedback_a = MultiXor<4,false>(XA,xa_taps);
+    bool feedback_bi = MultiXor<8,false>(XBI,xb_taps);
+    bool feedback_bq = MultiXor<8,false>(XBQ,xb_taps);
 
     XA >>= 1;
     XBI >>= 1;
     XBQ >>= 1;
-    navtools::SetBitTo<false>(XA,0,feedback_a);
-    navtools::SetBitTo<false>(XBI,0,feedback_bi);
-    navtools::SetBitTo<false>(XBQ,0,feedback_bq);
+    SetBitTo<false>(XA,0,feedback_a);
+    SetBitTo<false>(XBI,0,feedback_bi);
+    SetBitTo<false>(XBQ,0,feedback_bq);
   }
 }
 

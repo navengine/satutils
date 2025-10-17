@@ -6,8 +6,8 @@
 #include <sstream>
 #include <cassert>
 
-#include <navtools/constants.hpp>
-#include <navtools/binary-ops.hpp>
+#include <navtools/constants>
+#include <satutils/binary-ops.hpp>
 #include <satutils/ephemeris.hpp>
 #include "gnss-constants.hpp"
 
@@ -49,7 +49,7 @@ public:
     // start_idx and end_idx: 0 is MSB (first bit transmitted chronologically)
     uint32_t GetSegment(uint8_t start_idx, uint8_t end_idx) const
     {
-      return navtools::GetBits<false>(data_, start_idx, end_idx);
+      return satutils::GetBits<false>(data_, start_idx, end_idx);
     }
     
     /*
@@ -76,38 +76,38 @@ public:
       uint8_t end_idx = start_word_idx + (val_end - val_start);
       data_ &= 
            ~(((one_32 << (val_end - val_start + 1)) - one_32) << (31 - end_idx));
-      data_ |= (navtools::GetBits<true>(val, val_start, val_end) << (31 - end_idx));
+      data_ |= (satutils::GetBits<true>(val, val_start, val_end) << (31 - end_idx));
     }
     
     bool operator()(const uint8_t& i) const
     {
       assert((i >= 0) && (i < 30));
-      return navtools::GetBit<false>(data_,i);
+      return satutils::GetBit<false>(data_,i);
     }
 
     void SetBit(const uint8_t& i, const bool val)
     {
       assert((i >= 0) && (i < 30));
-      navtools::SetBitTo(data_,i,val);
+      satutils::SetBitTo(data_,i,val);
     }
 
     uint32_t GetParity(const bool D29, const bool D30) const
     {
       uint32_t word = data_;
-      navtools::SetBitTo<false>
-        (word, 24, (D29 ^ navtools::MultiXor<14,false>(word, LnavP25)));
-      navtools::SetBitTo<false>
-        (word, 25, (D30 ^ navtools::MultiXor<14,false>(word, LnavP26)));
-      navtools::SetBitTo<false>
-        (word, 26, (D29 ^ navtools::MultiXor<14,false>(word, LnavP27)));
-      navtools::SetBitTo<false>
-        (word, 27, (D30 ^ navtools::MultiXor<14,false>(word, LnavP28)));
-      navtools::SetBitTo<false>
-        (word, 28, (D30 ^ navtools::MultiXor<15,false>(word, LnavP29)));
-      navtools::SetBitTo<false>
-        (word, 29, (D29 ^ navtools::MultiXor<13,false>(word, LnavP30)));
+      satutils::SetBitTo<false>
+        (word, 24, (D29 ^ satutils::MultiXor<14,false>(word, LnavP25)));
+      satutils::SetBitTo<false>
+        (word, 25, (D30 ^ satutils::MultiXor<14,false>(word, LnavP26)));
+      satutils::SetBitTo<false>
+        (word, 26, (D29 ^ satutils::MultiXor<14,false>(word, LnavP27)));
+      satutils::SetBitTo<false>
+        (word, 27, (D30 ^ satutils::MultiXor<14,false>(word, LnavP28)));
+      satutils::SetBitTo<false>
+        (word, 28, (D30 ^ satutils::MultiXor<15,false>(word, LnavP29)));
+      satutils::SetBitTo<false>
+        (word, 29, (D29 ^ satutils::MultiXor<13,false>(word, LnavP30)));
       for (uint8_t i = 0; i < 24; i++) {
-        navtools::SetBitTo<false>(word, i, navtools::GetBit<false>(word,i) ^ D30);
+        satutils::SetBitTo<false>(word, i, satutils::GetBit<false>(word,i) ^ D30);
       }
       return word;
     }
@@ -121,7 +121,7 @@ public:
     {
       std::stringstream stream;
       for (int i = 0; i < 30; i++) {
-        stream << navtools::GetBit<false>(data_,i);
+        stream << satutils::GetBit<false>(data_,i);
       }
       return stream.str();
     }
@@ -145,7 +145,7 @@ public:
 
     if (num_bits != 8)
       data &= ((one << num_bits) - 1); // sets all MSBs past (num_bits-1) position to zero
-    if (twos_comp && (navtools::GetBit<true>(data, num_bits-1))) {
+    if (twos_comp && (satutils::GetBit<true>(data, num_bits-1))) {
       uint32_t signed_bit = (one << (num_bits-1));
       data &= (~signed_bit);
       data = (signed_bit - data); // un-signs the integer
@@ -166,7 +166,7 @@ public:
 
     if (num_bits != 16)
       data &= ((one << num_bits) - 1); // sets all MSBs past (num_bits-1) position to zero
-    if (twos_comp && (navtools::GetBit<true>(data, num_bits-1))) {
+    if (twos_comp && (satutils::GetBit<true>(data, num_bits-1))) {
       uint32_t signed_bit = (one << (num_bits-1));
       data &= (~signed_bit);
       data = (signed_bit - data); // un-signs the integer
@@ -187,7 +187,7 @@ public:
 
     if (num_bits != 32)
       data &= ((one << num_bits) - 1); // sets all MSBs past (num_bits-1) position to zero
-    if (twos_comp && (navtools::GetBit<true>(data, num_bits-1))) {
+    if (twos_comp && (satutils::GetBit<true>(data, num_bits-1))) {
       uint32_t signed_bit = (one << (num_bits-1));
       data &= (~signed_bit);
       data = (signed_bit - data); // un-signs the integer
@@ -226,27 +226,27 @@ public:
   template<typename Float>
   static constexpr EphemInfo<Float> scale_factors = 
   {
-    .T_GD = navtools::PowerOfTwo<-31,Float>(),
-    .t_oc = navtools::PowerOfTwo<4,Float>(),
-    .a_f2 = navtools::PowerOfTwo<-55,Float>(),
-    .a_f1 = navtools::PowerOfTwo<-43,Float>(),
-    .a_f0 = navtools::PowerOfTwo<-31,Float>(),
-    .M_0 = navtools::PowerOfTwo<-31,Float>(),
-    .delta_n = navtools::PowerOfTwo<-43,Float>(),
-    .e = navtools::PowerOfTwo<-33,Float>(),
-    .sqrtA = navtools::PowerOfTwo<-19,Float>(),
-    .OMEGA_0 = navtools::PowerOfTwo<-31,Float>(),
-    .i_0 = navtools::PowerOfTwo<-31,Float>(),
-    .omega = navtools::PowerOfTwo<-31,Float>(),
-    .OMEGA_DOT = navtools::PowerOfTwo<-43,Float>(),
-    .IDOT = navtools::PowerOfTwo<-43,Float>(),
-    .C_uc = navtools::PowerOfTwo<-29,Float>(),
-    .C_us = navtools::PowerOfTwo<-29,Float>(),
-    .C_rc = navtools::PowerOfTwo<-5,Float>(),
-    .C_rs = navtools::PowerOfTwo<-5,Float>(),
-    .C_ic = navtools::PowerOfTwo<-29,Float>(),
-    .C_is = navtools::PowerOfTwo<-29,Float>(),
-    .t_oe = navtools::PowerOfTwo<4,Float>(),
+    .T_GD = nt::PowerOfTwo<-31,Float>(),
+    .t_oc = nt::PowerOfTwo<4,Float>(),
+    .a_f2 = nt::PowerOfTwo<-55,Float>(),
+    .a_f1 = nt::PowerOfTwo<-43,Float>(),
+    .a_f0 = nt::PowerOfTwo<-31,Float>(),
+    .M_0 = nt::PowerOfTwo<-31,Float>(),
+    .delta_n = nt::PowerOfTwo<-43,Float>(),
+    .e = nt::PowerOfTwo<-33,Float>(),
+    .sqrtA = nt::PowerOfTwo<-19,Float>(),
+    .OMEGA_0 = nt::PowerOfTwo<-31,Float>(),
+    .i_0 = nt::PowerOfTwo<-31,Float>(),
+    .omega = nt::PowerOfTwo<-31,Float>(),
+    .OMEGA_DOT = nt::PowerOfTwo<-43,Float>(),
+    .IDOT = nt::PowerOfTwo<-43,Float>(),
+    .C_uc = nt::PowerOfTwo<-29,Float>(),
+    .C_us = nt::PowerOfTwo<-29,Float>(),
+    .C_rc = nt::PowerOfTwo<-5,Float>(),
+    .C_rs = nt::PowerOfTwo<-5,Float>(),
+    .C_ic = nt::PowerOfTwo<-29,Float>(),
+    .C_is = nt::PowerOfTwo<-29,Float>(),
+    .t_oe = nt::PowerOfTwo<4,Float>(),
   };
 
   static constexpr EphemInfo<uint8_t> num_bits =
@@ -625,8 +625,8 @@ public:
     for (uint8_t w = 0; w < 10; w++) {
       // setting bearing bits
       if ((w == 1) || (w == 9)) {
-        words_[w].SetBit(23, D30 ^ navtools::MultiXor<14,false>( words_[w].data(), arr29 ));
-        words_[w].SetBit(22, D29 ^ navtools::MultiXor<12,false>( words_[w].data(), arr30 ));
+        words_[w].SetBit(23, D30 ^ satutils::MultiXor<14,false>( words_[w].data(), arr29 ));
+        words_[w].SetBit(22, D29 ^ satutils::MultiXor<12,false>( words_[w].data(), arr30 ));
       }
       words_[w].ApplyParity(D29, D30);
       D29 = words_[w](28);

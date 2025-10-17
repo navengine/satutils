@@ -20,7 +20,7 @@
 #define SATUTILS_ATMOSPHERE_HPP
 
 #include <cmath>
-#include <navtools/constants.hpp>
+#include <navtools/constants>
 
 #include "satutils/gnss-constants.hpp"
 
@@ -85,7 +85,7 @@ class IonoModel : public KlobucharElements<Tp> {
       const Tp &el,
       const Tp &gamma = 1.0) {
     // elevation: radians to semi-circles
-    Tp E = el / navtools::PI<Tp>;
+    Tp E = el / nt::PI<Tp>;
 
     // 9. compute the slant factor
     Tp F = 1.0 + 16.0 * std::pow(0.53 - E, 3);
@@ -93,9 +93,9 @@ class IonoModel : public KlobucharElements<Tp> {
     Tp Iono;
     if (std::abs(F) <= 1.57) {
       // radians to semi-circles
-      Tp phiu = lat / navtools::PI<Tp>;
-      Tp lamu = lon / navtools::PI<Tp>;
-      // Tp A = az / navtools::PI<Tp>;
+      Tp phiu = lat / nt::PI<Tp>;
+      Tp lamu = lon / nt::PI<Tp>;
+      // Tp A = az / nt::PI<Tp>;
 
       // 1. calculate earth-centered angle
       Tp psi = 0.0137 / (E + 0.11) - 0.022;
@@ -133,7 +133,7 @@ class IonoModel : public KlobucharElements<Tp> {
       if (PI < 72000.0) PI = 72000.0;
 
       // 8. compute the phase of ionospheric delay
-      Tp XI = navtools::TWO_PI<Tp> * (t - 50400.0) / PI;
+      Tp XI = nt::TWO_PI<Tp> * (t - 50400.0) / PI;
       Tp XI2 = XI * XI;
 
       // 10. compute the ionospheric time delay
@@ -172,7 +172,7 @@ class TropoModel {
    */
   Tp CalcTropoDelay(const Tp &DoY, const Tp &lat, const Tp &h, const Tp &el) {
     // 1. Interpolate parameters
-    Tp mag_lat_deg = navtools::RAD2DEG<Tp> * std::abs(lat);
+    Tp mag_lat_deg = nt::RAD2DEG<Tp> * std::abs(lat);
     Eigen::Array<Tp, 1, 5> avg;
     Eigen::Array<Tp, 1, 5> delta;
     Eigen::Array<Tp, 1, 12> niell;
@@ -214,7 +214,7 @@ class TropoModel {
 
     // 2. calculate parameter scale factor
     Tp Dmin = (lat >= static_cast<Tp>(0.0)) ? static_cast<Tp>(28.0) : static_cast<Tp>(211.0);
-    Tp sf = std::cos(navtools::TWO_PI<Tp> * (DoY - Dmin) / static_cast<Tp>(365.25));
+    Tp sf = std::cos(nt::TWO_PI<Tp> * (DoY - Dmin) / static_cast<Tp>(365.25));
 
     // 3. calculate each parameter
     Tp P = avg(0) - delta(0) * sf;
@@ -229,7 +229,7 @@ class TropoModel {
 
     // 5. calculate vertical delay terms
     Tp base = 1.0 - (B * h / T);
-    Tp power = navtools::GRAVITY<Tp> / (Rd * B);
+    Tp power = nt::GRAVITY<Tp> / (Rd * B);
     Tp Tdry = std::pow(base, power) * T0dry;
     Tp Twet = std::pow(base, (l * power) - 1.0) * T0wet;
 
@@ -244,7 +244,7 @@ class TropoModel {
     // Tp Mwet = niellmap(sinE, niell(9), niell(10), niell(11));
 
     // 7. calculate tropospheric error
-    return (Tdry + Twet) * M / navtools::LIGHT_SPEED<>;
+    return (Tdry + Twet) * M / nt::LIGHT_SPEED<Tp>;
     // Tropo = Tdry * Mdry + Twet * Mwet;
   };
 
