@@ -452,15 +452,15 @@ public:
         T F = -1.5 * nt::WGS84_J2<T> * (nt::WGS84_GM<T> / (rk * rk)) *
               std::pow(nt::WGS84_A<T> / rk, 2);
         T TMP1 = -nt::WGS84_GM<T> / (rk * rk * rk);
-        T TMP2 = 5.0 * std::pow(pos(2) / rk, 2);
+        T TMP2 = 5.0 * std::pow(pos->operator()(2) / rk, 2);
         T TMP3 = nt::WGS84_OMEGA<T> * nt::WGS84_OMEGA<T>;
 
         // state
-        acc->operator()(0) = TMP1 * pos(0) + F * (1.0 - TMP2) * (pos(0) / rk) +
-                 2.0 * vel(1) * nt::WGS84_OMEGA<T> + pos(0) * TMP3;
-        acc->operator()(1) = TMP1 * pos(1) + F * (1.0 - TMP2) * (pos(1) / rk) -
-                 2.0 * vel(0) * nt::WGS84_OMEGA<T> + pos(1) * TMP3;
-        acc->operator()(2) = TMP1 * pos(2) + F * (3.0 - TMP2) * (pos(2) / rk);
+        acc->operator()(0) = TMP1 * pos->operator()(0) + F * (1.0 - TMP2) * (pos->operator()(0) / rk) +
+                 2.0 * vel->operator()(1) * nt::WGS84_OMEGA<T> + pos->operator()(0) * TMP3;
+        acc->operator()(1) = TMP1 * pos->operator()(1) + F * (1.0 - TMP2) * (pos->operator()(1) / rk) -
+                 2.0 * vel->operator()(0) * nt::WGS84_OMEGA<T> + pos->operator()(1) * TMP3;
+        acc->operator()(2) = TMP1 * pos->operator()(2) + F * (3.0 - TMP2) * (pos->operator()(2) / rk);
       }
     }
   }
